@@ -5,7 +5,9 @@ import { NATS_SERVICE } from 'src/config';
 import { CreatePersonDto } from './dto/create-person.dto';
 import { UpdatePersonDto } from './dto/update-person.dto';
 import { catchError } from 'rxjs';
+import { ApiTags, ApiResponse } from '@nestjs/swagger';
 
+@ApiTags('persons') 
 @Controller('persons')
 export class PersonsController {
   constructor(
@@ -13,6 +15,7 @@ export class PersonsController {
   ) {}
 
   @Get()
+  @ApiResponse({ status: 200, description: 'Mostrar todos los afiliados' })
   findAllPersons(@Query() paginationDto: PaginationDto) {
     return this.client.send(
       'person.findAll',
