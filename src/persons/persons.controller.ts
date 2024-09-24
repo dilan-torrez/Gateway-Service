@@ -1,4 +1,15 @@
-import { Body, Controller, Delete, Get, Inject, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Inject,
+  Param,
+  ParseIntPipe,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { PaginationDto } from 'src/common';
 import { NATS_SERVICE } from 'src/config';
@@ -7,51 +18,40 @@ import { UpdatePersonDto } from './dto/update-person.dto';
 import { catchError } from 'rxjs';
 import { ApiTags, ApiResponse } from '@nestjs/swagger';
 
-@ApiTags('persons') 
+@ApiTags('persons')
 @Controller('persons')
 export class PersonsController {
-  constructor(
-    @Inject(NATS_SERVICE) private readonly client: ClientProxy,
-  ) {}
+  constructor(@Inject(NATS_SERVICE) private readonly client: ClientProxy) {}
 
   @Get()
-  @ApiResponse({ status: 200, description: 'Mostrar todos los afiliados' })
+  @ApiResponse({ status: 200, description: 'Mostrar todas las personas' })
   findAllPersons(@Query() paginationDto: PaginationDto) {
-    return this.client.send(
-      'person.findAll',
-      paginationDto,
-    );
+    return this.client.send('person.findAll', paginationDto);
   }
 
   @Get(':id')
+  @ApiResponse({ status: 200, description: 'Mostrar una persona' })
   async findOnePersons(@Param('id') id: string) {
-    return this.client.send(
-      'person.findOne',
-      { id },
-    );
+    return this.client.send('person.findOne', { id });
   }
 
   @Post()
-  createProduct(@Body() CreatePersonDto: CreatePersonDto) {
-    return this.client.send(
-      'person.create',
-      CreatePersonDto,
-    );
+  @ApiResponse({ status: 200, description: 'Añadir una persona' })
+  createProduct(@Body() createPersonDto: CreatePersonDto) {
+    return this.client.send('person.create', createPersonDto);
   }
 
   @Patch(':id')
+  @ApiResponse({ status: 200, description: 'Editar una persona' })
   patchProduct(
     @Param('id', ParseIntPipe) id: number,
-    @Body() UpdatePersonDto: UpdatePersonDto,
+    @Body() updatePersonDto: UpdatePersonDto,
   ) {
     return this.client
-      .send(
-        'person.update',
-        {
-          id,
-          ...UpdatePersonDto,
-        },
-      )
+      .send('person.update', {
+        id,
+        ...updatePersonDto,
+      })
       .pipe(
         catchError((err) => {
           throw new RpcException(err);
@@ -60,6 +60,7 @@ export class PersonsController {
   }
 
   @Delete(':id')
+  @ApiResponse({ status: 200, description: 'Eliminar una persona' })
   deleteProduct(@Param('id') id: string) {
     return this.client.send('person.delete', { id }).pipe(
       catchError((err) => {
