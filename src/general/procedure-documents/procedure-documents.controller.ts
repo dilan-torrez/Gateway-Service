@@ -5,7 +5,7 @@ import { ClientProxy } from '@nestjs/microservices';
 import { NATS_SERVICE } from 'src/config';
 
 @ApiTags('ProcedureDocuments')
-@Controller('procedure-documents')
+@Controller('general/procedure-documents')
 export class ProcedureDocumentsController {
   constructor(
     @Inject(NATS_SERVICE) private readonly client: ClientProxy,
