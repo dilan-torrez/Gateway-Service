@@ -3,7 +3,7 @@ import { NatsModule } from './transports/nats.module';
 import { AuthModule } from './auth/auth.module';
 import { HealthCheckModule } from './health-check/health-check.module';
 import { PersonsModule } from './persons/persons.module';
-import { ProcedureDocumentsModule } from './procedure-documents/procedure-documents.module';
+import { ProcedureDocumentsModule } from './general/procedure-documents/procedure-documents.module';
 
 @Module({
   imports: [
