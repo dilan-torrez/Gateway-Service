@@ -12,7 +12,7 @@ async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   app.setGlobalPrefix('api');
-
+  app.enableCors();
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
@@ -20,7 +20,7 @@ async function bootstrap() {
     }),
   );
 
-  app.useGlobalFilters(new RpcCustomExceptionFilter())
+  app.useGlobalFilters(new RpcCustomExceptionFilter());
 
   console.log('Health Check configured');
 
