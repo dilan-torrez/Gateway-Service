@@ -4,6 +4,7 @@ import { AuthModule } from './auth/auth.module';
 import { HealthCheckModule } from './health-check/health-check.module';
 import { PersonsModule } from './persons/persons.module';
 import { ProcedureDocumentsModule } from './general/procedure-documents/procedure-documents.module';
+import { AffiliatesModule } from './affiliates/affiliates.module';
 
 @Module({
   imports: [
@@ -12,6 +13,7 @@ import { ProcedureDocumentsModule } from './general/procedure-documents/procedur
     HealthCheckModule,
     PersonsModule,
     ProcedureDocumentsModule,
+    AffiliatesModule,
   ],
 })
 export class AppModule {}
