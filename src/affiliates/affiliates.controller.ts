@@ -17,7 +17,7 @@ export class AffiliatesController {
   @Get(':id/documents')
   @ApiResponse({ status: 200, description: 'Mostrar Documentos del Afiliado' })
   async showDocuments(@Param('id') id: string) {
-    return this.client.send('affiliateDocuments.showDocuments', { id });
+    return this.client.send('affiliate.showDocuments', { id });
   }
 }
 
