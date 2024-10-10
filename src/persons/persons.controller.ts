@@ -68,4 +68,12 @@ export class PersonsController {
       }),
     );
   }
+
+  @Get('findPersonAffiliatesWithDetails/:id')
+  @ApiResponse({ status: 200,
+    description: 'Mostrar una persona con su relación de personAffiliate',
+  })
+  async findPersonAffiliate(@Param('id') id: string) {
+    return this.client.send('person.findPersonAffiliatesWithDetails', { id });
+  }
 }
