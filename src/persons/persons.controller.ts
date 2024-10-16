@@ -11,12 +11,12 @@ import {
   Query,
 } from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
-import { PaginationDto } from 'src/common';
 import { NATS_SERVICE } from 'src/config';
 import { CreatePersonDto } from './dto/create-person.dto';
 import { UpdatePersonDto } from './dto/update-person.dto';
 import { catchError } from 'rxjs';
 import { ApiTags, ApiResponse } from '@nestjs/swagger';
+import { FilterDto } from './dto/filter-person.dto';
 
 @ApiTags('persons')
 @Controller('persons')
@@ -25,8 +25,8 @@ export class PersonsController {
 
   @Get()
   @ApiResponse({ status: 200, description: 'Mostrar todas las personas' })
-  findAllPersons(@Query() paginationDto: PaginationDto) {
-    return this.client.send('person.findAll', paginationDto);
+  findAllPersons(@Query() filterDto: FilterDto) {
+    return this.client.send('person.findAll', filterDto);
   }
 
   @Get(':id')
@@ -67,5 +67,13 @@ export class PersonsController {
         throw new RpcException(err);
       }),
     );
+  }
+
+  @Get('findPersonAffiliatesWithDetails/:id')
+  @ApiResponse({ status: 200,
+    description: 'Mostrar una persona con su relación de personAffiliate',
+  })
+  async findPersonAffiliate(@Param('id') id: string) {
+    return this.client.send('person.findPersonAffiliatesWithDetails', { id });
   }
 }
