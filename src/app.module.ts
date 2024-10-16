@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
-import { NatsModule } from './transports/nats.module';
+import { AffiliatesModule } from './affiliates/affiliates.module';
 import { AuthModule } from './auth/auth.module';
+import { GeneralModule } from './general/general.module';
 import { HealthCheckModule } from './health-check/health-check.module';
 import { PersonsModule } from './persons/persons.module';
-import { ProcedureDocumentsModule } from './general/procedure-documents/procedure-documents.module';
-import { AffiliatesModule } from './affiliates/affiliates.module';
+import { NatsModule } from './transports/nats.module';
 
 @Module({
   imports: [
@@ -12,7 +12,7 @@ import { AffiliatesModule } from './affiliates/affiliates.module';
     AuthModule,
     HealthCheckModule,
     PersonsModule,
-    ProcedureDocumentsModule,
+    GeneralModule,
     AffiliatesModule,
   ],
 })
