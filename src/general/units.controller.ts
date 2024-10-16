@@ -33,7 +33,7 @@ export class UnitsController {
   @ApiResponse({ status: 200, description: 'Obtener todos los estados' })
   findAllBreakdowns(@Query() paginationDto: PaginationDto) {
     return this.client.send(
-      'units.findAll',
+      'breakdowns.findAll',
       paginationDto,
     );
   }
@@ -42,7 +42,7 @@ export class UnitsController {
   @ApiResponse({ status: 200, description: 'Obtener un estado' })
   async findOneBreakdowns(@Param('id') id: string) {
     return this.client.send(
-      'units.findOne',
+      'breakdowns.findOne',
       { id },
     );
   }
