@@ -3,9 +3,11 @@ import {
   ExecutionContext,
   Inject,
   Injectable,
+  Logger,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { ClientProxy, RpcException } from '@nestjs/microservices';
 
 import { Request } from 'express';
 import { firstValueFrom } from 'rxjs';
@@ -13,38 +15,30 @@ import { NATS_SERVICE } from 'src/config';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
-
-  constructor(
-    @Inject( NATS_SERVICE ) private readonly client: ClientProxy, 
-  ) {}
-
-
+  private readonly logger = new Logger('AuthGuard');
+  constructor(@Inject(NATS_SERVICE) private readonly client: ClientProxy) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-
-    const request = context.switchToHttp().getRequest();
+    const request: Request = context.switchToHttp().getRequest();
     const token = this.extractTokenFromHeader(request);
     if (!token) {
-      throw new UnauthorizedException('Token not found');
+      throw new NotFoundException({ error: true, message: 'Token no encontrado' });
     }
     try {
-
-      const { user, token:newToken } = await firstValueFrom(
-        this.client.send('auth.verify.user', token)
-      );
-      
-      request['user'] = user;
-      request['token'] = newToken;
-
-
+      const isTokenValid = await firstValueFrom(this.client.send('auth.verify', token));
+      return isTokenValid;
     } catch {
-      throw new UnauthorizedException();
+      throw new UnauthorizedException({ error: true, message: 'Sin autorización' });
     }
     return true;
   }
 
   private extractTokenFromHeader(request: Request): string | undefined {
-    const [type, token] = request.headers.authorization?.split(' ') ?? [];
-    return type === 'Bearer' ? token : undefined;
+    let [type, token] = request.headers.cookie?.split('=') ?? [];
+    if (!token) return null;
+    if (token.slice(-1) == ';') {
+      token = token.slice(0, -1);
+    }
+    return type === 'Set-Cookie' ? token : undefined;
   }
 }
