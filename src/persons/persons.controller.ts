@@ -3,26 +3,30 @@ import {
   Controller,
   Delete,
   Get,
+  HttpException,
   Inject,
   Param,
   ParseIntPipe,
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
-import { ClientProxy, RpcException } from '@nestjs/microservices';
+import { ClientProxy } from '@nestjs/microservices';
 import { NATS_SERVICE } from 'src/config';
 import { CreatePersonDto } from './dto/create-person.dto';
 import { UpdatePersonDto } from './dto/update-person.dto';
 import { catchError } from 'rxjs';
 import { ApiTags, ApiResponse } from '@nestjs/swagger';
 import { FilterDto } from './dto/filter-person.dto';
+import { AuthGuard } from 'src/auth/guards/auth.guard';
 
 @ApiTags('persons')
 @Controller('persons')
 export class PersonsController {
   constructor(@Inject(NATS_SERVICE) private readonly client: ClientProxy) {}
 
+  @UseGuards(AuthGuard)
   @Get()
   @ApiResponse({ status: 200, description: 'Mostrar todas las personas' })
   findAllPersons(@Query() filterDto: FilterDto) {
@@ -43,10 +47,7 @@ export class PersonsController {
 
   @Patch(':id')
   @ApiResponse({ status: 200, description: 'Editar una persona' })
-  patchProduct(
-    @Param('id', ParseIntPipe) id: number,
-    @Body() updatePersonDto: UpdatePersonDto,
-  ) {
+  patchProduct(@Param('id', ParseIntPipe) id: number, @Body() updatePersonDto: UpdatePersonDto) {
     return this.client
       .send('person.update', {
         id,
@@ -54,7 +55,7 @@ export class PersonsController {
       })
       .pipe(
         catchError((err) => {
-          throw new RpcException(err);
+          throw new HttpException(err, 400);
         }),
       );
   }
@@ -64,13 +65,14 @@ export class PersonsController {
   deleteProduct(@Param('id') id: string) {
     return this.client.send('person.delete', { id }).pipe(
       catchError((err) => {
-        throw new RpcException(err);
+        throw new HttpException(err, 400);
       }),
     );
   }
 
   @Get('findPersonAffiliatesWithDetails/:id')
-  @ApiResponse({ status: 200,
+  @ApiResponse({
+    status: 200,
     description: 'Mostrar una persona con su relación de personAffiliate',
   })
   async findPersonAffiliate(@Param('id') id: string) {

@@ -1,65 +1,38 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Inject,
-  Post,
-  Res,
-  UseGuards,
-} from '@nestjs/common';
-import { ClientProxy, RpcException } from '@nestjs/microservices';
+import { Body, Controller, Inject, Logger, Post, Res } from '@nestjs/common';
+import { ClientProxy } from '@nestjs/microservices';
 import { NATS_SERVICE } from 'src/config';
-import { LoginUserDto, RegisterUserDto } from './dto';
-import { catchError } from 'rxjs';
-import { AuthGuard } from './guards/auth.guard';
-import { Token, User } from './decorators';
-import { CurrentUser } from './interfaces/current-user.interface';
+import { LoginUserDto } from './dto';
+import { firstValueFrom } from 'rxjs';
 import { Response } from 'express';
+import { serialize } from 'cookie';
 
 @Controller('auth')
 export class AuthController {
+  private readonly logger = new Logger('AuthController');
   constructor(@Inject(NATS_SERVICE) private readonly client: ClientProxy) {}
 
-  @Post('register')
-  registerUser(@Body() registerUserDto: RegisterUserDto) {
-    return this.client.send('auth.register.user', registerUserDto).pipe(
-      catchError((error) => {
-        throw new RpcException(error);
-      }),
-    );
-  }
-
   @Post('login')
-  loginUser(@Body() loginUserDto: LoginUserDto) {
-    console.log(loginUserDto);
-    return this.client.send('auth.login', loginUserDto).pipe(
-      catchError((error) => {
-        throw new RpcException(error);
-      }),
-    );
-  }
-
-  @Get('redirect')
-  redirectToFrontend1(@Res() res: Response) {
-    // return res.redirect('http://localhost:3002');
-    res.status(302).setHeader('Location', 'http://localhost:3002').json({
-      message: 'Redirecting to frontend',
-      url: 'http://localhost:3002', // Opcional, por si quieres enviar la URL en el cuerpo
-    });
-  }
-
-  @Get('test')
-  test() {
-    return 'hola';
-  }
-
-  @UseGuards(AuthGuard)
-  @Get('verify')
-  verifyToken(@User() user: CurrentUser, @Token() token: string) {
-    // const user = req['user'];
-    // const token = req['token'];
-
-    // return this.client.send('auth.verify.user', {});
-    return { user, token };
+  async loginUser(@Body() loginUserDto: LoginUserDto, @Res({ passthrough: true }) res: Response) {
+    this.logger.log({ username: loginUserDto.username });
+    try {
+      const token = await firstValueFrom(this.client.send('auth.login', loginUserDto));
+      const cookie = serialize('Set-Cookie', token.access_token, {
+        httpOnly: true, // Cookie no accesible desde JavaScript
+        //secure: process.env.NODE_ENV === 'production', // Solo enviar sobre HTTPS en producción
+        sameSite: 'Strict',
+        maxAge: 60 * 60 * 4, // segundos * minutos * horas
+        path: '/', // Cookie accesible en todas las rutas
+      });
+      this.logger.log('Login successful');
+      res.status(200).setHeader('cookie', cookie).json({
+        message: 'Login successful',
+      });
+    } catch (error) {
+      this.logger.error(error);
+      res.status(401).json({
+        error: true,
+        message: error.message,
+      });
+    }
   }
 }
