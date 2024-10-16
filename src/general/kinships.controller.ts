@@ -4,27 +4,27 @@ import { PaginationDto } from 'src/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { NATS_SERVICE } from 'src/config';
 
-@ApiTags('ProcedureDocuments')
-@Controller('general/procedure-documents')
-export class ProcedureDocumentsController {
+@ApiTags('Kinship')
+@Controller('kinships')
+export class KinshipsController {
   constructor(
     @Inject(NATS_SERVICE) private readonly client: ClientProxy,
   ) {}
-
+  
   @Get()
-  @ApiResponse({ status: 200, description: 'Obtener todos los documentos' })
+  @ApiResponse({ status: 200, description: 'Obtener todos los parentescos' })
   findAll(@Query() paginationDto: PaginationDto) {
     return this.client.send(
-      'procedureDocuments.findAll',
+      'kinships.findAll',
       paginationDto,
     );
   }
-
+  
   @Get(':id')
-  @ApiResponse({ status: 200, description: 'Obtener un documento' })
+  @ApiResponse({ status: 200, description: 'Obtener un parentesco' })
   async findOne(@Param('id') id: string) {
     return this.client.send(
-      'procedureDocuments.findOne',
+      'kinships.findOne',
       { id },
     );
   }

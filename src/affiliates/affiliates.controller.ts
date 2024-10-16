@@ -1,4 +1,4 @@
-import { BadRequestException, Controller, Get, Inject, Param, Post, UploadedFile, UseInterceptors, UsePipes } from '@nestjs/common';
+import { Controller, Get, Inject, Param, Post, UploadedFile, UseInterceptors, UsePipes } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
@@ -20,8 +20,8 @@ export class AffiliatesController {
   @ApiResponse({ status: 200, description: 'El documento fue subido exitosamente.' })
   @ApiResponse({ status: 400, description: 'El archivo PDF es obligatorio o el archivo no es válido.' })
   @ApiResponse({ status: 500, description: 'Error interno del servidor.' })
-  @ApiParam({ name: 'affiliate_id', description: 'ID del afiliado', type: String, example: '123' })
-  @ApiParam({ name: 'procedure_document_id', description: 'ID del del documento', type: String, example: '456' })
+  @ApiParam({ name: 'affiliate_id', description: 'ID del afiliado', type: Number, example: 123 })
+  @ApiParam({ name: 'procedure_document_id', description: 'ID del del documento', type: Number, example: 456 })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     description: 'Archivo PDF del documento del afiliado',
@@ -48,7 +48,7 @@ export class AffiliatesController {
     return this.client.send('affiliate.createDocuments', {
       affiliateId,
       procedureDocumentId,
-      buffer: document_pdf.buffer,
+      document_pdf,
     });
   }
 
