@@ -33,7 +33,7 @@ export class DegreesController {
   @ApiResponse({ status: 200, description: 'Obtener todas las jerarquías' })
   findAllHierarchies(@Query() paginationDto: PaginationDto) {
     return this.client.send(
-      'degrees.findAll',
+      'hierarchies.findAll',
       paginationDto,
     );
   }
@@ -42,7 +42,7 @@ export class DegreesController {
   @ApiResponse({ status: 200, description: 'Obtener una jerarquía' })
   async findOneHierarchies(@Param('id') id: string) {
     return this.client.send(
-      'degrees.findOne',
+      'hierarchies.findOne',
       { id },
     );
   }
