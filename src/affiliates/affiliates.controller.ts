@@ -57,5 +57,11 @@ export class AffiliatesController {
   async showDocuments(@Param('id') id: string) {
     return this.client.send('affiliate.showDocuments', { id });
   }
+
+  @Get(':affiliate_id/documents/:procedure_document_id')
+  @ApiResponse({ status: 200, description: 'Buscar el documento del Afiliado' })
+  async findDocument(@Param('affiliate_id') affiliate_id: string, @Param('procedure_document_id') procedure_document_id: string) {
+    return this.client.send('affiliate.findDocument', { affiliate_id, procedure_document_id });
+  }
 }
 
