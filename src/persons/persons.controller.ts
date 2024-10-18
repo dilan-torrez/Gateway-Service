@@ -65,7 +65,7 @@ export class PersonsController {
   deleteProduct(@Param('id') id: string) {
     return this.client.send('person.delete', { id }).pipe(
       catchError((err) => {
-        throw new RpcException(err);
+        throw new HttpException(err, 400);
       }),
     );
   }
