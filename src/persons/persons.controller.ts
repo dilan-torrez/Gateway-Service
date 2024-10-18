@@ -78,4 +78,13 @@ export class PersonsController {
   async findPersonAffiliate(@Param('id') id: string) {
     return this.client.send('person.findPersonAffiliatesWithDetails', { id });
   }
+
+  @Get('findAffiliteRelatedWithPerson/:id')
+  @ApiResponse({
+    status: 200,
+    description: 'Mostrar una persona con su relación de personAffiliate',
+  })
+  async findAffiliteRelatedWithPerson(@Param('id') id: string) {
+    return this.client.send('person.findAffiliteRelatedWithPerson', { id });
+  }
 }
