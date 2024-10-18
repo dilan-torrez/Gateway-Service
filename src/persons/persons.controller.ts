@@ -65,7 +65,7 @@ export class PersonsController {
   deleteProduct(@Param('id') id: string) {
     return this.client.send('person.delete', { id }).pipe(
       catchError((err) => {
-        throw new HttpException(err, 400);
+        throw new RpcException(err);
       }),
     );
   }
@@ -77,5 +77,14 @@ export class PersonsController {
   })
   async findPersonAffiliate(@Param('id') id: string) {
     return this.client.send('person.findPersonAffiliatesWithDetails', { id });
+  }
+
+  @Get('findAffiliteRelatedWithPerson/:id')
+  @ApiResponse({
+    status: 200,
+    description: 'Mostrar una persona con su relación de personAffiliate',
+  })
+  async findAffiliteRelatedWithPerson(@Param('id') id: string) {
+    return this.client.send('person.findAffiliteRelatedWithPerson', { id });
   }
 }
