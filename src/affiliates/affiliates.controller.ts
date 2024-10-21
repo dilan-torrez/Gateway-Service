@@ -31,7 +31,7 @@ export class AffiliatesController {
     return this.client.send('affiliate.findOneData', { id });
   }
 
-  @Post(':affiliate_id/:procedure_document_id/create-document')
+  @Post(':affiliate_id/:procedure_document_id/create-or-update-document')
   @ApiOperation({ summary: 'Enlazar y Subir Documento del Afiliado' })
   @ApiResponse({ status: 200, description: 'El documento fue subido exitosamente.' })
   @ApiResponse({
@@ -64,12 +64,12 @@ export class AffiliatesController {
   })
   @UseInterceptors(FileInterceptor('document_pdf'))
   @UsePipes(new FileRequiredPipe())
-  async createDocuments(
+  async createOrUpdateDocument(
     @Param('affiliate_id') affiliateId: string,
     @Param('procedure_document_id') procedureDocumentId: string,
     @UploadedFile() document_pdf: Express.Multer.File,
   ) {
-    return this.client.send('affiliate.createDocuments', {
+    return this.client.send('affiliate.createOrUpdateDocument', {
       affiliateId,
       procedureDocumentId,
       document_pdf,
