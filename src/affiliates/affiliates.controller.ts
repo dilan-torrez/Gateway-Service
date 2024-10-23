@@ -25,13 +25,13 @@ import { FileRequiredPipe } from './pipes/file-required.pipe';
 export class AffiliatesController {
   constructor(@Inject(NATS_SERVICE) private readonly client: ClientProxy) {}
 
-  @Get(':id')
+  @Get(':affiliateId')
   @ApiResponse({ status: 200, description: 'Mostrar datos del afiliado' })
-  async findOneData(@Param('id') id: string) {
-    return this.client.send('affiliate.findOneData', { id });
+  async findOneData(@Param('affiliateId') affiliateId: string) {
+    return this.client.send('affiliate.findOneData', { affiliateId });
   }
 
-  @Post(':affiliate_id/:procedure_document_id/create-or-update-document')
+  @Post(':affiliateId/:procedureDocumentId/create-or-update-document')
   @ApiOperation({ summary: 'Enlazar y Subir Documento del Afiliado' })
   @ApiResponse({ status: 200, description: 'El documento fue subido exitosamente.' })
   @ApiResponse({
@@ -39,9 +39,9 @@ export class AffiliatesController {
     description: 'El archivo PDF es obligatorio o el archivo no es válido.',
   })
   @ApiResponse({ status: 500, description: 'Error interno del servidor.' })
-  @ApiParam({ name: 'affiliate_id', description: 'ID del afiliado', type: Number, example: 123 })
+  @ApiParam({ name: 'affiliateId', description: 'ID del afiliado', type: Number, example: 123 })
   @ApiParam({
-    name: 'procedure_document_id',
+    name: 'procedureDocumentId',
     description: 'ID del del documento',
     type: Number,
     example: 456,
@@ -54,7 +54,7 @@ export class AffiliatesController {
     schema: {
       type: 'object',
       properties: {
-        document_pdf: {
+        documentPdf: {
           type: 'string',
           format: 'binary',
           description: 'Archivo PDF a subir',
@@ -62,32 +62,32 @@ export class AffiliatesController {
       },
     },
   })
-  @UseInterceptors(FileInterceptor('document_pdf'))
+  @UseInterceptors(FileInterceptor('documentPdf'))
   @UsePipes(new FileRequiredPipe())
   async createOrUpdateDocument(
-    @Param('affiliate_id') affiliateId: string,
-    @Param('procedure_document_id') procedureDocumentId: string,
-    @UploadedFile() document_pdf: Express.Multer.File,
+    @Param('affiliateId') affiliateId: string,
+    @Param('procedureDocumentId') procedureDocumentId: string,
+    @UploadedFile() documentPdf: Express.Multer.File,
   ) {
     return this.client.send('affiliate.createOrUpdateDocument', {
       affiliateId,
       procedureDocumentId,
-      document_pdf,
+      documentPdf,
     });
   }
 
-  @Get(':id/documents')
+  @Get(':affiliateId/documents')
   @ApiResponse({ status: 200, description: 'Mostrar Documentos del Afiliado' })
-  async showDocuments(@Param('id') id: string) {
-    return this.client.send('affiliate.showDocuments', { id });
+  async showDocuments(@Param('affiliateId') affiliateId: string) {
+    return this.client.send('affiliate.showDocuments', { affiliateId });
   }
 
-  @Get(':affiliate_id/documents/:procedure_document_id')
+  @Get(':affiliateId/documents/:procedureDocumentId')
   @ApiResponse({ status: 200, description: 'Buscar el documento del Afiliado' })
   async findDocument(
-    @Param('affiliate_id') affiliate_id: string,
-    @Param('procedure_document_id') procedure_document_id: string,
+    @Param('affiliateId') affiliateId: string,
+    @Param('procedureDocumentId') procedureDocumentId: string,
   ) {
-    return this.client.send('affiliate.findDocument', { affiliate_id, procedure_document_id });
+    return this.client.send('affiliate.findDocument', { affiliateId, procedureDocumentId });
   }
 }
