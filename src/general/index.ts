@@ -6,3 +6,4 @@ export { FinancialEntitiesController } from './financial-entities.controller';
 export { KinshipsController } from './kinships.controller';
 export { PensionEntitiesController } from './pension-entities.controller';
 export { UnitsController } from './units.controller';
+export { ModulesController } from './modules.controller';

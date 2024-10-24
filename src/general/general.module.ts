@@ -8,7 +8,8 @@ import {
   FinancialEntitiesController,
   KinshipsController,
   PensionEntitiesController,
-  UnitsController
+  UnitsController,
+  ModulesController,
 } from './';
 
 @Module({
@@ -20,7 +21,8 @@ import {
     FinancialEntitiesController,
     KinshipsController,
     PensionEntitiesController,
-    UnitsController
+    UnitsController,
+    ModulesController,
   ],
   providers: [],
   imports: [NatsModule],
