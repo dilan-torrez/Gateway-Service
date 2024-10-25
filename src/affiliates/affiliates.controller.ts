@@ -7,6 +7,7 @@ import {
   UploadedFile,
   UseInterceptors,
   UsePipes,
+  Res,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -20,6 +21,8 @@ import {
 } from '@nestjs/swagger';
 import { NATS_SERVICE } from 'src/config';
 import { FileRequiredPipe } from './pipes/file-required.pipe';
+import { Response } from 'express';
+import { firstValueFrom } from 'rxjs';
 @ApiTags('affiliates')
 @Controller('affiliates')
 export class AffiliatesController {
@@ -87,7 +90,16 @@ export class AffiliatesController {
   async findDocument(
     @Param('affiliateId') affiliateId: string,
     @Param('procedureDocumentId') procedureDocumentId: string,
+    @Res() res: Response
   ) {
-    return this.client.send('affiliate.findDocument', { affiliateId, procedureDocumentId });
+    const documentPdf = await firstValueFrom(this.client.send('affiliate.findDocument', { affiliateId, procedureDocumentId }));
+
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="${affiliateId}${procedureDocumentId}.pdf"`,
+    });
+
+    res.send(Buffer.from(documentPdf, 'base64'));
   }
+
 }
