@@ -14,11 +14,14 @@ import {
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { NATS_SERVICE } from 'src/config';
-import { CreatePersonDto } from './dto/create-person.dto';
-import { UpdatePersonDto } from './dto/update-person.dto';
+import {
+  CreatePersonDto,
+  UpdatePersonDto,
+  CreatePersonFingerprintDto,
+  FilteredPaginationDto,
+} from './dto';
 import { catchError } from 'rxjs';
 import { ApiTags, ApiResponse } from '@nestjs/swagger';
-import { FilterDto } from './dto/filter-person.dto';
 import { AuthGuard } from 'src/auth/guards/auth.guard';
 
 @ApiTags('persons')
@@ -29,7 +32,7 @@ export class PersonsController {
   @UseGuards(AuthGuard)
   @Get()
   @ApiResponse({ status: 200, description: 'Mostrar todas las personas' })
-  findAllPersons(@Query() filterDto: FilterDto) {
+  findAllPersons(@Query() filterDto: FilteredPaginationDto) {
     return this.client.send('person.findAll', filterDto);
   }
 
@@ -86,5 +89,21 @@ export class PersonsController {
   })
   async findAffiliteRelatedWithPerson(@Param('id') id: string) {
     return this.client.send('person.findAffiliteRelatedWithPerson', { id });
+  }
+
+  @Post('createPersonFingerprint')
+  @ApiResponse({
+    status: 200,
+    description: 'Crear una huella digital de una persona',
+  })
+  async createPersonFingerprint(
+    @Body()
+    createPersonFingerprintDto: CreatePersonFingerprintDto,
+  ) {
+    const result = await this.client.send(
+      'person.createPersonFingerprint',
+      createPersonFingerprintDto,
+    );
+    return result;
   }
 }
