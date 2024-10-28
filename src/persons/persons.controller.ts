@@ -106,4 +106,13 @@ export class PersonsController {
     );
     return result;
   }
+
+  @Get('showPersonFingerprint/:id')
+  @ApiResponse({
+    status: 200,
+    description: 'Mostrar el listado de huellas digitales de una persona',
+  })
+  async showFingerprintRegistered(@Param('id') id: string) {
+    return this.client.send('person.showFingerprintRegistered', { id });
+  }
 }
