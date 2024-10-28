@@ -90,9 +90,11 @@ export class AffiliatesController {
   async findDocument(
     @Param('affiliateId') affiliateId: string,
     @Param('procedureDocumentId') procedureDocumentId: string,
-    @Res() res: Response
+    @Res() res: Response,
   ) {
-    const documentPdf = await firstValueFrom(this.client.send('affiliate.findDocument', { affiliateId, procedureDocumentId }));
+    const documentPdf = await firstValueFrom(
+      this.client.send('affiliate.findDocument', { affiliateId, procedureDocumentId }),
+    );
 
     res.set({
       'Content-Type': 'application/pdf',
@@ -102,4 +104,15 @@ export class AffiliatesController {
     res.send(Buffer.from(documentPdf, 'base64'));
   }
 
+  @Get(':affiliateId/modality/:modalityId')
+  @ApiResponse({
+    status: 200,
+    description: 'Cotejar documentos del Afiliado con los documentos requeridos de la modalidad',
+  })
+  async collateDocuments(
+    @Param('affiliateId') affiliateId: string,
+    @Param('modalityId') modalityId: string,
+  ) {
+    return this.client.send('affiliate.collateDocuments', { affiliateId, modalityId });
+  }
 }
