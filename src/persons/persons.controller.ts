@@ -29,6 +29,14 @@ import { AuthGuard } from 'src/auth/guards/auth.guard';
 export class PersonsController {
   constructor(@Inject(NATS_SERVICE) private readonly client: ClientProxy) {}
 
+  @Get('showListFingerprint')
+  @ApiResponse({
+    status: 200,
+    description: 'Mostrar el listado de huellas digitales',
+  })
+  async showListFingerprint() {
+    return this.client.send('person.showListFingerprint', {});
+  }
   @UseGuards(AuthGuard)
   @Get()
   @ApiResponse({ status: 200, description: 'Mostrar todas las personas' })
