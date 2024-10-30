@@ -40,14 +40,13 @@ export class PersonsController {
   @UseGuards(AuthGuard)
   @Get()
   @ApiResponse({ status: 200, description: 'Mostrar todas las personas' })
-  findAllPersons(@Query() filterDto: FilteredPaginationDto) {;
+  findAllPersons(@Query() filterDto: FilteredPaginationDto) {
     return this.client.send('person.findAll', filterDto);
   }
 
   @Get(':id')
   @ApiResponse({ status: 200, description: 'Mostrar una persona' })
   async findOnePersons(@Param('id') id: string) {
-    // return 'asdasd';
     return this.client.send('person.findOne', { id });
   }
 
