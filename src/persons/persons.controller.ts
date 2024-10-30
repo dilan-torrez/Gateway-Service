@@ -21,7 +21,7 @@ import {
   FilteredPaginationDto,
 } from './dto';
 import { catchError } from 'rxjs';
-import { ApiTags, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { AuthGuard } from 'src/auth/guards/auth.guard';
 
 @ApiTags('persons')
@@ -92,6 +92,19 @@ export class PersonsController {
   }
 
   @Post('createPersonFingerprint')
+  @ApiBody({ type: CreatePersonFingerprintDto }) // Esto especifica que el cuerpo de la solicitud debe ser del tipo CreatePersonFingerprintDto
+  @ApiResponse({
+    status: 200,
+    description: 'Crear una huella digital de una persona',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Error de validación de entrada',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Error interno del servidor',
+  })
   @ApiResponse({
     status: 200,
     description: 'Crear una huella digital de una persona',
