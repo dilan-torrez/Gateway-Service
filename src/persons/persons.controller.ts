@@ -35,25 +35,41 @@ export class PersonsController {
     description: 'Mostrar el listado de huellas digitales',
   })
   async showListFingerprint() {
-    return this.client.send('person.showListFingerprint', {});
+    return this.client.send('person.showListFingerprint', {}).pipe(
+      catchError((err) => {
+        throw new HttpException(err, err.statusCode);
+      }),
+    );
   }
   @UseGuards(AuthGuard)
   @Get()
   @ApiResponse({ status: 200, description: 'Mostrar todas las personas' })
   findAllPersons(@Query() filterDto: FilteredPaginationDto) {
-    return this.client.send('person.findAll', filterDto);
+    return this.client.send('person.findAll', filterDto).pipe(
+      catchError((err) => {
+        throw new HttpException(err, err.statusCode);
+      }),
+    );
   }
 
   @Get(':id')
   @ApiResponse({ status: 200, description: 'Mostrar una persona' })
   async findOnePersons(@Param('id') id: string) {
-    return this.client.send('person.findOne', { id });
+    return this.client.send('person.findOne', { id }).pipe(
+      catchError((err) => {
+        throw new HttpException(err, err.statusCode);
+      }),
+    );
   }
 
   @Post()
   @ApiResponse({ status: 200, description: 'Añadir una persona' })
   createProduct(@Body() createPersonDto: CreatePersonDto) {
-    return this.client.send('person.create', createPersonDto);
+    return this.client.send('person.create', createPersonDto).pipe(
+      catchError((err) => {
+        throw new HttpException(err, err.statusCode);
+      }),
+    );
   }
 
   @Patch(':id')
@@ -76,7 +92,7 @@ export class PersonsController {
   deleteProduct(@Param('id') id: string) {
     return this.client.send('person.delete', { id }).pipe(
       catchError((err) => {
-        throw new HttpException(err, 400);
+        throw new HttpException(err, err.statusCode);
       }),
     );
   }
@@ -87,7 +103,11 @@ export class PersonsController {
     description: 'Mostrar una persona con su relación de personAffiliate',
   })
   async findPersonAffiliate(@Param('id') id: string) {
-    return this.client.send('person.findPersonAffiliatesWithDetails', { id });
+    return this.client.send('person.findPersonAffiliatesWithDetails', { id }).pipe(
+      catchError((err) => {
+        throw new HttpException(err, err.statusCode);
+      }),
+    );
   }
 
   @Get('findAffiliteRelatedWithPerson/:id')
@@ -96,7 +116,11 @@ export class PersonsController {
     description: 'Mostrar una persona con su relación de personAffiliate',
   })
   async findAffiliteRelatedWithPerson(@Param('id') id: string) {
-    return this.client.send('person.findAffiliteRelatedWithPerson', { id });
+    return this.client.send('person.findAffiliteRelatedWithPerson', { id }).pipe(
+      catchError((err) => {
+        throw new HttpException(err, err.statusCode);
+      }),
+    );
   }
 
   @Post('createPersonFingerprint')
@@ -121,10 +145,13 @@ export class PersonsController {
     @Body()
     createPersonFingerprintDto: CreatePersonFingerprintDto,
   ) {
-    const result = await this.client.send(
-      'person.createPersonFingerprint',
-      createPersonFingerprintDto,
-    );
+    const result = await this.client
+      .send('person.createPersonFingerprint', createPersonFingerprintDto)
+      .pipe(
+        catchError((err) => {
+          throw new HttpException(err, err.statusCode);
+        }),
+      );
     return result;
   }
 
@@ -134,6 +161,10 @@ export class PersonsController {
     description: 'Mostrar el listado de huellas digitales de una persona',
   })
   async showFingerprintRegistered(@Param('id') id: string) {
-    return this.client.send('person.showFingerprintRegistered', { id });
+    return this.client.send('person.showFingerprintRegistered', { id }).pipe(
+      catchError((err) => {
+        throw new HttpException(err, err.statusCode);
+      }),
+    );
   }
 }
