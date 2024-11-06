@@ -110,6 +110,23 @@ export class PersonsController {
     );
   }
 
+  @Get('showPersonsRelatedToAffiliate/:id')
+  @ApiResponse({
+    status: 200,
+    description: 'Mostrar listado de personas relacionadas a un afiliado',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Person with the specified ID not found',
+  })
+  async showPersonsRelatedToAffiliate(@Param('id') id: string) {
+    return this.client.send('person.showPersonsRelatedToAffiliate', { id }).pipe(
+      catchError((err) => {
+        throw new HttpException(err, err.code);
+      }),
+    );
+  }
+
   @Get('findAffiliteRelatedWithPerson/:id')
   @ApiResponse({
     status: 200,
