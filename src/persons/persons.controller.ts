@@ -184,4 +184,17 @@ export class PersonsController {
       }),
     );
   }
+
+  @Get('getFingerprintComparison/:id')
+  @ApiResponse({
+    status: 200,
+    description: 'Mostrar el listado de huellas digitales de una persona',
+  })
+  async getFingerprintComparison(@Param('id') id: string) {
+    return this.client.send('person.getFingerprintComparison', { id }).pipe(
+      catchError((err) => {
+        throw new HttpException(err, err.statusCode);
+      }),
+    );
+  }
 }
