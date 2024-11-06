@@ -15,8 +15,8 @@ export class AuthController {
   async loginUser(@Body() loginUserDto: LoginUserDto, @Res({ passthrough: true }) res: Response) {
     this.logger.log({ username: loginUserDto.username });
     try {
-      const token = await firstValueFrom(this.client.send('auth.login', loginUserDto));
-      const cookie = serialize('Set-Cookie', token.access_token, {
+      const data = await firstValueFrom(this.client.send('auth.login', loginUserDto));
+      const cookie = serialize('Set-Cookie', data.access_token, {
         httpOnly: true, // Cookie no accesible desde JavaScript
         //secure: process.env.NODE_ENV === 'production', // Solo enviar sobre HTTPS en producción
         sameSite: 'Strict',
@@ -26,6 +26,7 @@ export class AuthController {
       this.logger.log('Login successful');
       res.status(200).setHeader('cookie', cookie).json({
         message: 'Login successful',
+        user: data.user,
       });
     } catch (error) {
       this.logger.error(error);
