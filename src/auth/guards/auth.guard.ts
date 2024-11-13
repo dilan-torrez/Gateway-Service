@@ -12,25 +12,31 @@ import { ClientProxy } from '@nestjs/microservices';
 import { Request } from 'express';
 import { firstValueFrom } from 'rxjs';
 import { NATS_SERVICE } from 'src/config';
+import { RecordService } from 'src/records/record.service';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   private readonly logger = new Logger('AuthGuard');
-  constructor(@Inject(NATS_SERVICE) private readonly client: ClientProxy) {}
+  constructor(
+    @Inject(NATS_SERVICE) private readonly client: ClientProxy,
+    private readonly recordService: RecordService,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request: Request = context.switchToHttp().getRequest();
     const token = this.extractTokenFromHeader(request);
+    let username: string;
     if (!token) {
       throw new NotFoundException({ error: true, message: 'Token no encontrado' });
     }
     try {
-      const isTokenValid = await firstValueFrom(this.client.send('auth.verify', token));
-      return isTokenValid;
+      username = (await firstValueFrom(this.client.send('auth.verify', token))).username;
+      request['user'] = username;
+      return true;
     } catch {
+      this.recordService.warn({ ip: request.ip, message: 'Sin autorización' });
       throw new UnauthorizedException({ error: true, message: 'Sin autorización' });
     }
-    return true;
   }
 
   private extractTokenFromHeader(request: Request): string | undefined {

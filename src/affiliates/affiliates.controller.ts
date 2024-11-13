@@ -8,6 +8,8 @@ import {
   UseInterceptors,
   UsePipes,
   Res,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -23,10 +25,15 @@ import { NATS_SERVICE } from 'src/config';
 import { FileRequiredPipe } from './pipes/file-required.pipe';
 import { Response } from 'express';
 import { firstValueFrom } from 'rxjs';
+import { RecordService } from 'src/records/record.service';
+import { AuthGuard } from 'src/auth/guards/auth.guard';
 @ApiTags('affiliates')
 @Controller('affiliates')
 export class AffiliatesController {
-  constructor(@Inject(NATS_SERVICE) private readonly client: ClientProxy) {}
+  constructor(
+    @Inject(NATS_SERVICE) private readonly client: ClientProxy,
+    private readonly recordService: RecordService,
+  ) {}
 
   @Get(':affiliateId')
   @ApiResponse({ status: 200, description: 'Mostrar datos del afiliado' })
@@ -65,13 +72,22 @@ export class AffiliatesController {
       },
     },
   })
+  @UseGuards(AuthGuard)
   @UseInterceptors(FileInterceptor('documentPdf'))
   @UsePipes(new FileRequiredPipe())
   async createOrUpdateDocument(
+    @Req() req: any,
     @Param('affiliateId') affiliateId: string,
     @Param('procedureDocumentId') procedureDocumentId: string,
     @UploadedFile() documentPdf: Express.Multer.File,
   ) {
+    this.recordService.http(
+      `Registro de documento [${procedureDocumentId}]`,
+      req.user,
+      2,
+      +affiliateId,
+      'Affiliate',
+    );
     return this.client.send('affiliate.createOrUpdateDocument', {
       affiliateId,
       procedureDocumentId,

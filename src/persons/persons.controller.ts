@@ -10,6 +10,7 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
@@ -23,11 +24,15 @@ import {
 import { catchError } from 'rxjs';
 import { ApiTags, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { AuthGuard } from 'src/auth/guards/auth.guard';
+import { RecordService } from 'src/records/record.service';
 
 @ApiTags('persons')
 @Controller('persons')
 export class PersonsController {
-  constructor(@Inject(NATS_SERVICE) private readonly client: ClientProxy) {}
+  constructor(
+    @Inject(NATS_SERVICE) private readonly client: ClientProxy,
+    private readonly recordService: RecordService,
+  ) {}
 
   @Get('showListFingerprint')
   @ApiResponse({
@@ -140,6 +145,7 @@ export class PersonsController {
     );
   }
 
+  @UseGuards(AuthGuard)
   @Post('createPersonFingerprint')
   @ApiBody({ type: CreatePersonFingerprintDto }) // Esto especifica que el cuerpo de la solicitud debe ser del tipo CreatePersonFingerprintDto
   @ApiResponse({
@@ -159,6 +165,7 @@ export class PersonsController {
     description: 'Crear una huella digital de una persona',
   })
   async createPersonFingerprint(
+    @Req() req: any,
     @Body()
     createPersonFingerprintDto: CreatePersonFingerprintDto,
   ) {
@@ -169,6 +176,13 @@ export class PersonsController {
           throw new HttpException(err, err.statusCode);
         }),
       );
+    this.recordService.http(
+      `Registro de huella [${createPersonFingerprintDto.fingerprints.map((e) => e.fingerprintTypeId)}]`,
+      req.user,
+      2,
+      createPersonFingerprintDto.personId,
+      'Person',
+    );
     return result;
   }
 

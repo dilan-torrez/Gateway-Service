@@ -5,9 +5,11 @@ import { GeneralModule } from './general/general.module';
 import { HealthCheckModule } from './health-check/health-check.module';
 import { PersonsModule } from './persons/persons.module';
 import { NatsModule } from './transports/nats.module';
+import { RecordModule } from './records/record.module';
 
 @Module({
   imports: [
+    RecordModule,
     NatsModule,
     AuthModule,
     HealthCheckModule,
