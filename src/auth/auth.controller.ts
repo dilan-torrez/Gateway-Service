@@ -20,7 +20,7 @@ export class AuthController {
     this.logger.log({ username: loginUserDto.username });
     try {
       const data = await firstValueFrom(this.client.send('auth.login', loginUserDto));
-      const cookie = serialize('Set-Cookie', data.access_token, {
+      const cookie = serialize('msp', data.access_token, {
         httpOnly: true, // Cookie no accesible desde JavaScript
         //secure: process.env.NODE_ENV === 'production', // Solo enviar sobre HTTPS en producción
         sameSite: 'Strict',
@@ -29,7 +29,7 @@ export class AuthController {
       });
       this.logger.log('Login successful');
       this.recordService.http('Inicio de sesion exitosa', data.user.username, 1, 1, 'User');
-      res.status(200).setHeader('cookie', cookie).json({
+      res.status(200).setHeader('Set-Cookie', cookie).json({
         message: 'Login successful',
         user: data.user,
       });
