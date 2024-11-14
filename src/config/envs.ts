@@ -7,6 +7,12 @@ interface EnvVars {
   NATS_SERVERS: string[];
 
   FRONTENDS_SERVERS: string[];
+
+  DB_PASSWORD: string;
+  DB_NAME: string;
+  DB_HOST: string;
+  DB_PORT: number;
+  DB_USERNAME: string;
 }
 
 const envsSchema = joi
@@ -15,6 +21,12 @@ const envsSchema = joi
 
     NATS_SERVERS: joi.array().items(joi.string()).required(),
     FRONTENDS_SERVERS: joi.array().items(joi.string()).required(),
+
+    DB_PASSWORD: joi.string().required(),
+    DB_NAME: joi.string().required(),
+    DB_HOST: joi.string().required(),
+    DB_PORT: joi.number().required(),
+    DB_USERNAME: joi.string().required(),
   })
   .unknown(true);
 
@@ -35,4 +47,10 @@ export const envs = {
 
   natsServers: envVars.NATS_SERVERS,
   frontendServers: envVars.FRONTENDS_SERVERS,
+
+  dbPassword: envVars.DB_PASSWORD,
+  dbName: envVars.DB_NAME,
+  dbHost: envVars.DB_HOST,
+  dbPort: envVars.DB_PORT,
+  dbUsername: envVars.DB_USERNAME,
 };

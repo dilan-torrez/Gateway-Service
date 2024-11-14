@@ -5,11 +5,15 @@ import { LoginUserDto } from './dto';
 import { firstValueFrom } from 'rxjs';
 import { Response } from 'express';
 import { serialize } from 'cookie';
+import { RecordService } from 'src/records/record.service';
 
 @Controller('auth')
 export class AuthController {
   private readonly logger = new Logger('AuthController');
-  constructor(@Inject(NATS_SERVICE) private readonly client: ClientProxy) {}
+  constructor(
+    @Inject(NATS_SERVICE) private readonly client: ClientProxy,
+    private readonly recordService: RecordService,
+  ) {}
 
   @Post('login')
   async loginUser(@Body() loginUserDto: LoginUserDto, @Res({ passthrough: true }) res: Response) {
@@ -24,6 +28,7 @@ export class AuthController {
         path: '/', // Cookie accesible en todas las rutas
       });
       this.logger.log('Login successful');
+      this.recordService.http('Inicio de sesion exitosa', data.user.username, 1, 1, 'User');
       res.status(200).setHeader('cookie', cookie).json({
         message: 'Login successful',
         user: data.user,
