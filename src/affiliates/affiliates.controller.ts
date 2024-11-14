@@ -95,13 +95,13 @@ export class AffiliatesController {
     });
   }
 
-  @Get(':affiliateId/documents/show')
+  @Get(':affiliateId/documents')
   @ApiResponse({ status: 200, description: 'Mostrar Documentos del Afiliado' })
   async showDocuments(@Param('affiliateId') affiliateId: string) {
     return this.client.send('affiliate.showDocuments', { affiliateId });
   }
 
-  @Get(':affiliateId/documents/:procedureDocumentId/find')
+  @Get(':affiliateId/documents/:procedureDocumentId')
   @ApiResponse({ status: 200, description: 'Buscar el documento del Afiliado' })
   async findDocument(
     @Param('affiliateId') affiliateId: string,
