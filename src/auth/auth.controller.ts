@@ -1,4 +1,4 @@
-import { Body, Controller, Inject, Logger, Post, Res } from '@nestjs/common';
+import { Body, Controller, Inject, Logger, Post, Query, Res } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { NATS_SERVICE } from 'src/config';
 import { LoginUserDto } from './dto';
@@ -16,15 +16,29 @@ export class AuthController {
   ) {}
 
   @Post('login')
-  async loginUser(@Body() loginUserDto: LoginUserDto, @Res({ passthrough: true }) res: Response) {
+  async loginUser(
+    @Body() loginUserDto: LoginUserDto,
+    @Query() query: any,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     this.logger.log({ username: loginUserDto.username });
     try {
-      const data = await firstValueFrom(this.client.send('auth.login', loginUserDto));
+      const { longToken } = query;
+      let data: any;
+      if (longToken) {
+        data = await firstValueFrom(
+          this.client.send('auth.login', { ...loginUserDto, longToken: true }),
+        );
+      } else {
+        data = await firstValueFrom(this.client.send('auth.login', loginUserDto));
+      }
+      const timeShort = 60 * 60 * 4; // segundos * minutos * horas - 4 horas
+      const timeLong = 60 * 60 * 24 * 365; // segundos * minutos * horas * dias - 1 año
       const cookie = serialize('msp', data.access_token, {
         httpOnly: true, // Cookie no accesible desde JavaScript
         //secure: process.env.NODE_ENV === 'production', // Solo enviar sobre HTTPS en producción
         sameSite: 'Strict',
-        maxAge: 60 * 60 * 4, // segundos * minutos * horas
+        maxAge: longToken ? timeLong : timeShort,
         path: '/', // Cookie accesible en todas las rutas
       });
       this.logger.log('Login successful');
