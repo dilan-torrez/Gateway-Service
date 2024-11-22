@@ -57,10 +57,10 @@ export class PersonsController {
     );
   }
 
-  @Get(':id')
+  @Get(':term')
   @ApiResponse({ status: 200, description: 'Mostrar una persona' })
-  async findOnePersons(@Param('id') id: string) {
-    return this.client.send('person.findOne', { id }).pipe(
+  async findOnePersons(@Param('term') term: string) {
+    return this.client.send('person.findOne', { term }).pipe(
       catchError((err) => {
         throw new HttpException(err, err.statusCode);
       }),
