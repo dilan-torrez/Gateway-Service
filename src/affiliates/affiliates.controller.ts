@@ -41,7 +41,7 @@ export class AffiliatesController {
     return this.client.send('affiliate.findOneData', { affiliateId });
   }
 
-  @Post(':affiliateId/:procedureDocumentId/create-or-update-document')
+  @Post(':affiliateId/document/:procedureDocumentId/createOrUpdate')
   @ApiOperation({ summary: 'Enlazar y Subir Documento del Afiliado' })
   @ApiResponse({ status: 200, description: 'El documento fue subido exitosamente.' })
   @ApiResponse({
@@ -120,7 +120,7 @@ export class AffiliatesController {
     res.send(Buffer.from(documentPdf, 'base64'));
   }
 
-  @Get(':affiliateId/modality/:modalityId')
+  @Get(':affiliateId/modality/:modalityId/collate')
   @ApiResponse({
     status: 200,
     description: 'Cotejar documentos del Afiliado con los documentos requeridos de la modalidad',
