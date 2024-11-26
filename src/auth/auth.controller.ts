@@ -1,10 +1,9 @@
-import { Body, Controller, Inject, Logger, Post, Query, Res } from '@nestjs/common';
+import { Body, Controller, Get, Inject, Logger, Post, Query, Res } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { NATS_SERVICE } from 'src/config';
 import { LoginUserDto } from './dto';
 import { firstValueFrom } from 'rxjs';
 import { Response } from 'express';
-import { serialize } from 'cookie';
 import { RecordService } from 'src/records/record.service';
 
 @Controller('auth')
@@ -32,21 +31,23 @@ export class AuthController {
       } else {
         data = await firstValueFrom(this.client.send('auth.login', loginUserDto));
       }
-      const timeShort = 60 * 60 * 4; // segundos * minutos * horas - 4 horas
-      const timeLong = 60 * 60 * 24 * 365; // segundos * minutos * horas * dias - 1 año
-      const cookie = serialize('msp', data.access_token, {
-        httpOnly: true, // Cookie no accesible desde JavaScript
-        //secure: process.env.NODE_ENV === 'production', // Solo enviar sobre HTTPS en producción
-        sameSite: 'Strict',
-        maxAge: longToken ? timeLong : timeShort,
-        path: '/', // Cookie accesible en todas las rutas
-      });
+      const timeShort = 4; // 4 horas
+      const timeLong = 24 * 365; // horas * dias - 1 año
+      const oneHourMiliseconds = 3600000;
       this.logger.log('Login successful');
       this.recordService.http('Inicio de sesion exitosa', data.user.username, 1, 1, 'User');
-      res.status(200).setHeader('Set-Cookie', cookie).json({
-        message: 'Login successful',
-        user: data.user,
-      });
+      res
+        .cookie('msp', data.access_token, {
+          path: '/',
+          httpOnly: true,
+          sameSite: 'strict',
+          expires: new Date(Date.now() + (longToken ? timeLong : timeShort) * oneHourMiliseconds),
+        })
+        .status(200)
+        .json({
+          message: 'Login successful',
+          user: data.user,
+        });
     } catch (error) {
       this.logger.error(error);
       res.status(401).json({
@@ -54,5 +55,17 @@ export class AuthController {
         message: error.message,
       });
     }
+  }
+
+  @Get('logout')
+  async logout(@Res() res: Response): Promise<void> {
+    res.clearCookie('msp', {
+      path: '/',
+      httpOnly: true,
+      sameSite: 'strict',
+    });
+    res.status(200).json({
+      message: 'Logout successful',
+    });
   }
 }
