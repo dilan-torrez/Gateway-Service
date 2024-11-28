@@ -43,7 +43,7 @@ export class KioskController {
     if (authorization && authorization.startsWith('Bearer ')) {
       hash = authorization.split(' ')[1];
     }
-    // El hash2 se usa para comparar con la libreria bcrypt, es un problema de versiones con el hash nativo de
+    // El hash2 se usa para comparar con la libreria bcrypt, es un problema de versiones con el hash nativo de laravel
     const hash2 = hash.replace(/^\$2y(.+)$/i, '$2a$1');
     const url = `${envs.PvtApiServer}/kioskoComplemento?ci=${identityCard}`;
     try {
