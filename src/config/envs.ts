@@ -8,6 +8,9 @@ interface EnvVars {
 
   FRONTENDS_SERVERS: string[];
 
+  PVT_API_SERVER: string;
+  PVT_HASH_SECRET: string;
+
   DB_PASSWORD: string;
   DB_NAME: string;
   DB_HOST: string;
@@ -21,6 +24,9 @@ const envsSchema = joi
 
     NATS_SERVERS: joi.array().items(joi.string()).required(),
     FRONTENDS_SERVERS: joi.array().items(joi.string()).required(),
+
+    PVT_API_SERVER: joi.string(),
+    PVT_HASH_SECRET: joi.string(),
 
     DB_PASSWORD: joi.string().required(),
     DB_NAME: joi.string().required(),
@@ -47,6 +53,9 @@ export const envs = {
 
   natsServers: envVars.NATS_SERVERS,
   frontendServers: envVars.FRONTENDS_SERVERS,
+
+  PvtApiServer: envVars.PVT_API_SERVER,
+  PvtHashSecret: envVars.PVT_HASH_SECRET,
 
   dbPassword: envVars.DB_PASSWORD,
   dbName: envVars.DB_NAME,
