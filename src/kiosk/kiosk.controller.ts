@@ -73,4 +73,4 @@ export class KioskController {
       return error.response.data;
     }
   }
-
+}
