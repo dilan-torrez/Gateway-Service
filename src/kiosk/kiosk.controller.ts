@@ -64,7 +64,67 @@ export class KioskController {
         );
         return data;
       } else {
-        res.status(403).json({
+        res.status(401).json({
+          error: true,
+          message: 'Token no valido',
+        });
+      }
+    } catch (error) {
+      return error.response.data;
+    }
+  }
+
+  @Get('ecoCom/:id')
+  async GetEcoComKiosko(
+    @Headers('authorization') authorization: string,
+    @Param('id') id: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    let hash: string;
+    if (authorization && authorization.startsWith('Bearer ')) {
+      hash = authorization.split(' ')[1];
+    }
+    // El hash2 se usa para comparar con la libreria bcrypt, es un problema de versiones con el hash nativo de laravel
+    const hash2 = hash.replace(/^\$2y(.+)$/i, '$2a$1');
+    const url = `${envs.PvtApiServer}/eco_com/${id}`;
+    try {
+      if (await bcrypt.compare(envs.PvtHashSecret, hash2)) {
+        const { data } = await firstValueFrom(
+          this.httpService.get(url, { headers: { Authorization: `Bearer ${hash}` } }),
+        );
+        return data;
+      } else {
+        res.status(401).json({
+          error: true,
+          message: 'Token no valido',
+        });
+      }
+    } catch (error) {
+      return error.response.data;
+    }
+  }
+
+  @Post('ecoCom')
+  async CreateEcoComKiosko(
+    @Headers('authorization') authorization: string,
+    @Res({ passthrough: true }) res: Response,
+    @Body() body,
+  ) {
+    let hash: string;
+    if (authorization && authorization.startsWith('Bearer ')) {
+      hash = authorization.split(' ')[1];
+    }
+    // El hash2 se usa para comparar con la libreria bcrypt, es un problema de versiones con el hash nativo de laravel
+    const hash2 = hash.replace(/^\$2y(.+)$/i, '$2a$1');
+    const url = `${envs.PvtApiServer}/eco_com`;
+    try {
+      if (await bcrypt.compare(envs.PvtHashSecret, hash2)) {
+        const { data } = await firstValueFrom(
+          this.httpService.post(url, body, { headers: { Authorization: `Bearer ${hash}` } }),
+        );
+        return data;
+      } else {
+        res.status(401).json({
           error: true,
           message: 'Token no valido',
         });
