@@ -1,8 +1,8 @@
 import { HttpException, Inject, Logger } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+import { firstValueFrom } from 'rxjs';
 import { catchError } from 'rxjs/operators';
 import { NATS_SERVICE } from '../../config';
-import { firstValueFrom } from 'rxjs';
 
 export class NatsService {
   private logger = new Logger('MicroserviceUtils');
@@ -12,6 +12,9 @@ export class NatsService {
   async send(service: string, data: any): Promise<any> {
     return this.client.send(service, data).pipe(
       catchError((err) => {
+        if (!err || Object.keys(err).length === 0) {
+          throw new HttpException('Microservice Unavailable', 503);
+        }
         throw new HttpException(err, err.statusCode);
       }),
     );
@@ -21,6 +24,9 @@ export class NatsService {
     return firstValueFrom(
       this.client.send(service, data).pipe(
         catchError((err) => {
+          if (!err || Object.keys(err).length === 0) {
+            throw new HttpException('Microservice Unavailable', 503);
+          }
           throw new HttpException(err, err.statusCode);
         }),
       ),
