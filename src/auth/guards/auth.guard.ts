@@ -1,24 +1,20 @@
 import {
   CanActivate,
   ExecutionContext,
-  Inject,
   Injectable,
   Logger,
   NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
 
 import { Request } from 'express';
-import { firstValueFrom } from 'rxjs';
-import { NATS_SERVICE } from 'src/config';
-import { RecordService } from 'src/records/record.service';
+import { NatsService, RecordService } from 'src/common';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
   private readonly logger = new Logger('AuthGuard');
   constructor(
-    @Inject(NATS_SERVICE) private readonly client: ClientProxy,
+    private nats: NatsService,
     private readonly recordService: RecordService,
   ) {}
 
@@ -30,7 +26,7 @@ export class AuthGuard implements CanActivate {
       throw new NotFoundException({ error: true, message: 'Token no encontrado' });
     }
     try {
-      username = (await firstValueFrom(this.client.send('auth.verify', token))).username;
+      username = (await this.nats.firstValue('auth.verify', token)).username;
       request['user'] = username;
       return true;
     } catch {
