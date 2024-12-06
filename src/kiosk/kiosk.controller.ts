@@ -1,8 +1,18 @@
-import { Body, Controller, Get, HttpException, Inject, Param, Headers, Res, Post } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  HttpException,
+  Inject,
+  Param,
+  Headers,
+  Res,
+  Post,
+} from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
 import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { catchError, firstValueFrom } from 'rxjs';
-import { envs, NATS_SERVICE } from 'src/config';
+import { PvtEnvs, NATS_SERVICE } from 'src/config';
 import * as bcrypt from 'bcrypt';
 import { HttpService } from '@nestjs/axios';
 import { Response } from 'express';
@@ -56,9 +66,9 @@ export class KioskController {
     }
     // El hash2 se usa para comparar con la libreria bcrypt, es un problema de versiones con el hash nativo de laravel
     const hash2 = hash.replace(/^\$2y(.+)$/i, '$2a$1');
-    const url = `${envs.PvtApiServer}/kioskoComplemento?ci=${identityCard}`;
+    const url = `${PvtEnvs.PvtApiServer}/kioskoComplemento?ci=${identityCard}`;
     try {
-      if (await bcrypt.compare(envs.PvtHashSecret, hash2)) {
+      if (await bcrypt.compare(PvtEnvs.PvtHashSecret, hash2)) {
         const { data } = await firstValueFrom(
           this.httpService.get(url, { headers: { Authorization: `Bearer ${hash}` } }),
         );
@@ -86,9 +96,9 @@ export class KioskController {
     }
     // El hash2 se usa para comparar con la libreria bcrypt, es un problema de versiones con el hash nativo de laravel
     const hash2 = hash.replace(/^\$2y(.+)$/i, '$2a$1');
-    const url = `${envs.PvtApiServer}/eco_com/${id}`;
+    const url = `${PvtEnvs.PvtApiServer}/eco_com/${id}`;
     try {
-      if (await bcrypt.compare(envs.PvtHashSecret, hash2)) {
+      if (await bcrypt.compare(PvtEnvs.PvtHashSecret, hash2)) {
         const { data } = await firstValueFrom(
           this.httpService.get(url, { headers: { Authorization: `Bearer ${hash}` } }),
         );
@@ -116,9 +126,9 @@ export class KioskController {
     }
     // El hash2 se usa para comparar con la libreria bcrypt, es un problema de versiones con el hash nativo de laravel
     const hash2 = hash.replace(/^\$2y(.+)$/i, '$2a$1');
-    const url = `${envs.PvtApiServer}/eco_com`;
+    const url = `${PvtEnvs.PvtApiServer}/eco_com`;
     try {
-      if (await bcrypt.compare(envs.PvtHashSecret, hash2)) {
+      if (await bcrypt.compare(PvtEnvs.PvtHashSecret, hash2)) {
         const { data } = await firstValueFrom(
           this.httpService.post(url, body, { headers: { Authorization: `Bearer ${hash}` } }),
         );
