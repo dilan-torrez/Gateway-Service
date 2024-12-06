@@ -1,16 +1,13 @@
-import { Body, Controller, Get, Inject, Logger, Post, Query, Res } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
-import { NATS_SERVICE } from 'src/config';
+import { Body, Controller, Get, Logger, Post, Query, Res } from '@nestjs/common';
 import { LoginUserDto } from './dto';
-import { firstValueFrom } from 'rxjs';
 import { Response } from 'express';
-import { RecordService } from 'src/records/record.service';
+import { NatsService, RecordService } from 'src/common';
 
 @Controller('auth')
 export class AuthController {
   private readonly logger = new Logger('AuthController');
   constructor(
-    @Inject(NATS_SERVICE) private readonly client: ClientProxy,
+    private readonly nats: NatsService,
     private readonly recordService: RecordService,
   ) {}
 
@@ -25,11 +22,9 @@ export class AuthController {
       const { longToken } = query;
       let data: any;
       if (longToken) {
-        data = await firstValueFrom(
-          this.client.send('auth.login', { ...loginUserDto, longToken: true }),
-        );
+        data = await this.nats.firstValue('auth.login', { ...loginUserDto, longToken: true });
       } else {
-        data = await firstValueFrom(this.client.send('auth.login', loginUserDto));
+        data = await this.nats.firstValue('auth.login', loginUserDto);
       }
       const timeShort = 4; // 4 horas
       const timeLong = 24 * 365; // horas * dias - 1 año

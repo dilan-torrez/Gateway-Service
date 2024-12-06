@@ -12,7 +12,7 @@ interface EnvVars {
   PVT_HASH_SECRET: string;
 
   DB_PASSWORD: string;
-  DB_NAME: string;
+  DB_DATABASE: string;
   DB_HOST: string;
   DB_PORT: number;
   DB_USERNAME: string;
@@ -29,7 +29,7 @@ const envsSchema = joi
     PVT_HASH_SECRET: joi.string(),
 
     DB_PASSWORD: joi.string().required(),
-    DB_NAME: joi.string().required(),
+    DB_DATABASE: joi.string().required(),
     DB_HOST: joi.string().required(),
     DB_PORT: joi.number().required(),
     DB_USERNAME: joi.string().required(),
@@ -48,18 +48,27 @@ if (error) {
 
 const envVars: EnvVars = value;
 
-export const envs = {
+export const PortEnvs = {
   port: envVars.PORT,
+};
 
+export const NastEnvs = {
   natsServers: envVars.NATS_SERVERS,
-  frontendServers: envVars.FRONTENDS_SERVERS,
+};
 
-  PvtApiServer: envVars.PVT_API_SERVER,
-  PvtHashSecret: envVars.PVT_HASH_SECRET,
-
+export const DbEnvs = {
   dbPassword: envVars.DB_PASSWORD,
-  dbName: envVars.DB_NAME,
+  dbDatabase: envVars.DB_DATABASE,
   dbHost: envVars.DB_HOST,
   dbPort: envVars.DB_PORT,
   dbUsername: envVars.DB_USERNAME,
+};
+
+export const FrontEnvs = {
+  frontendServers: envVars.FRONTENDS_SERVERS,
+};
+
+export const PvtEnvs = {
+  PvtApiServer: envVars.PVT_API_SERVER,
+  PvtHashSecret: envVars.PVT_HASH_SECRET,
 };

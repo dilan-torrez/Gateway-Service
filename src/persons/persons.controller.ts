@@ -3,8 +3,6 @@ import {
   Controller,
   Delete,
   Get,
-  HttpException,
-  Inject,
   Param,
   ParseIntPipe,
   Patch,
@@ -13,24 +11,21 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
-import { NATS_SERVICE } from 'src/config';
 import {
   CreatePersonDto,
   UpdatePersonDto,
   CreatePersonFingerprintDto,
   FilteredPaginationDto,
 } from './dto';
-import { catchError } from 'rxjs';
 import { ApiTags, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { AuthGuard } from 'src/auth/guards/auth.guard';
-import { RecordService } from 'src/records/record.service';
+import { NatsService, RecordService } from 'src/common';
 
 @ApiTags('persons')
 @Controller('persons')
 export class PersonsController {
   constructor(
-    @Inject(NATS_SERVICE) private readonly client: ClientProxy,
+    private readonly nats: NatsService,
     private readonly recordService: RecordService,
   ) {}
 
@@ -40,66 +35,40 @@ export class PersonsController {
     description: 'Mostrar el listado de huellas digitales',
   })
   async showListFingerprint() {
-    return this.client.send('person.showListFingerprint', {}).pipe(
-      catchError((err) => {
-        throw new HttpException(err, err.statusCode);
-      }),
-    );
+    return this.nats.send('person.showListFingerprint', {});
   }
   @UseGuards(AuthGuard)
   @Get()
   @ApiResponse({ status: 200, description: 'Mostrar todas las personas' })
   findAllPersons(@Query() filterDto: FilteredPaginationDto) {
-    return this.client.send('person.findAll', filterDto).pipe(
-      catchError((err) => {
-        throw new HttpException(err, err.statusCode);
-      }),
-    );
+    return this.nats.send('person.findAll', filterDto);
   }
 
   @Get(':term')
   @ApiResponse({ status: 200, description: 'Mostrar una persona' })
   async findOnePersons(@Param('term') term: string) {
-    return this.client.send('person.findOne', { term }).pipe(
-      catchError((err) => {
-        throw new HttpException(err, err.statusCode);
-      }),
-    );
+    return this.nats.send('person.findOne', { term });
   }
 
   @Post()
   @ApiResponse({ status: 200, description: 'Añadir una persona' })
   createProduct(@Body() createPersonDto: CreatePersonDto) {
-    return this.client.send('person.create', createPersonDto).pipe(
-      catchError((err) => {
-        throw new HttpException(err, err.statusCode);
-      }),
-    );
+    return this.nats.send('person.create', createPersonDto);
   }
 
   @Patch(':id')
   @ApiResponse({ status: 200, description: 'Editar una persona' })
   patchProduct(@Param('id', ParseIntPipe) id: number, @Body() updatePersonDto: UpdatePersonDto) {
-    return this.client
-      .send('person.update', {
-        id,
-        ...updatePersonDto,
-      })
-      .pipe(
-        catchError((err) => {
-          throw new HttpException(err, 400);
-        }),
-      );
+    return this.nats.send('person.update', {
+      id,
+      ...updatePersonDto,
+    });
   }
 
   @Delete(':id')
   @ApiResponse({ status: 200, description: 'Eliminar una persona' })
   deleteProduct(@Param('id') id: string) {
-    return this.client.send('person.delete', { id }).pipe(
-      catchError((err) => {
-        throw new HttpException(err, err.statusCode);
-      }),
-    );
+    return this.nats.send('person.delete', { id });
   }
 
   @Get('findPersonAffiliatesWithDetails/:id')
@@ -108,11 +77,7 @@ export class PersonsController {
     description: 'Mostrar una persona con su relación de personAffiliate',
   })
   async findPersonAffiliate(@Param('id') id: string) {
-    return this.client.send('person.findPersonAffiliatesWithDetails', { id }).pipe(
-      catchError((err) => {
-        throw new HttpException(err, err.statusCode);
-      }),
-    );
+    return this.nats.send('person.findPersonAffiliatesWithDetails', { id });
   }
 
   @Get('showPersonsRelatedToAffiliate/:id')
@@ -125,11 +90,7 @@ export class PersonsController {
     description: 'Person with the specified ID not found',
   })
   async showPersonsRelatedToAffiliate(@Param('id') id: string) {
-    return this.client.send('person.showPersonsRelatedToAffiliate', { id }).pipe(
-      catchError((err) => {
-        throw new HttpException(err, err.code);
-      }),
-    );
+    return this.nats.send('person.showPersonsRelatedToAffiliate', { id });
   }
 
   @Get('findAffiliteRelatedWithPerson/:id')
@@ -138,11 +99,7 @@ export class PersonsController {
     description: 'Mostrar una persona con su relación de personAffiliate',
   })
   async findAffiliteRelatedWithPerson(@Param('id') id: string) {
-    return this.client.send('person.findAffiliteRelatedWithPerson', { id }).pipe(
-      catchError((err) => {
-        throw new HttpException(err, err.statusCode);
-      }),
-    );
+    return this.nats.send('person.findAffiliteRelatedWithPerson', { id });
   }
 
   @UseGuards(AuthGuard)
@@ -169,13 +126,10 @@ export class PersonsController {
     @Body()
     createPersonFingerprintDto: CreatePersonFingerprintDto,
   ) {
-    const result = await this.client
-      .send('person.createPersonFingerprint', createPersonFingerprintDto)
-      .pipe(
-        catchError((err) => {
-          throw new HttpException(err, err.statusCode);
-        }),
-      );
+    const result = await this.nats.send(
+      'person.createPersonFingerprint',
+      createPersonFingerprintDto,
+    );
     this.recordService.http(
       `Registro de huella [${createPersonFingerprintDto.fingerprints.map((e) => e.fingerprintTypeId)}]`,
       req.user,
@@ -192,11 +146,7 @@ export class PersonsController {
     description: 'Mostrar el listado de huellas digitales de una persona',
   })
   async showFingerprintRegistered(@Param('id') id: string) {
-    return this.client.send('person.showFingerprintRegistered', { id }).pipe(
-      catchError((err) => {
-        throw new HttpException(err, err.statusCode);
-      }),
-    );
+    return this.nats.send('person.showFingerprintRegistered', { id });
   }
 
   @Get('getFingerprintComparison/:id')
@@ -205,10 +155,6 @@ export class PersonsController {
     description: 'Mostrar el listado de huellas digitales de una persona',
   })
   async getFingerprintComparison(@Param('id') id: string) {
-    return this.client.send('person.getFingerprintComparison', { id }).pipe(
-      catchError((err) => {
-        throw new HttpException(err, err.statusCode);
-      }),
-    );
+    return this.nats.send('person.getFingerprintComparison', { id });
   }
 }
