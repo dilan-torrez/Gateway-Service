@@ -1,7 +1,6 @@
 import {
   Controller,
   Get,
-  Inject,
   Param,
   Post,
   UploadedFile,
@@ -11,7 +10,6 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBody,
@@ -21,24 +19,21 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { NATS_SERVICE } from 'src/config';
-import { FileRequiredPipe } from './pipes/file-required.pipe';
+import { FileRequiredPipe, NatsService, RecordService } from 'src/common';
 import { Response } from 'express';
-import { firstValueFrom } from 'rxjs';
-import { RecordService } from 'src/records/record.service';
 import { AuthGuard } from 'src/auth/guards/auth.guard';
 @ApiTags('affiliates')
 @Controller('affiliates')
 export class AffiliatesController {
   constructor(
-    @Inject(NATS_SERVICE) private readonly client: ClientProxy,
+    private readonly nats: NatsService,
     private readonly recordService: RecordService,
   ) {}
 
   @Get(':affiliateId')
   @ApiResponse({ status: 200, description: 'Mostrar datos del afiliado' })
   async findOneData(@Param('affiliateId') affiliateId: string) {
-    return this.client.send('affiliate.findOneData', { affiliateId });
+    return this.nats.send('affiliate.findOneData', { affiliateId });
   }
 
   @Post(':affiliateId/document/:procedureDocumentId/createOrUpdate')
@@ -88,7 +83,7 @@ export class AffiliatesController {
       +affiliateId,
       'Affiliate',
     );
-    return this.client.send('affiliate.createOrUpdateDocument', {
+    return this.nats.send('affiliate.createOrUpdateDocument', {
       affiliateId,
       procedureDocumentId,
       documentPdf,
@@ -98,7 +93,7 @@ export class AffiliatesController {
   @Get(':affiliateId/documents')
   @ApiResponse({ status: 200, description: 'Mostrar Documentos del Afiliado' })
   async showDocuments(@Param('affiliateId') affiliateId: string) {
-    return this.client.send('affiliate.showDocuments', { affiliateId });
+    return this.nats.send('affiliate.showDocuments', { affiliateId });
   }
 
   @Get(':affiliateId/documents/:procedureDocumentId')
@@ -108,9 +103,10 @@ export class AffiliatesController {
     @Param('procedureDocumentId') procedureDocumentId: string,
     @Res() res: Response,
   ) {
-    const documentPdf = await firstValueFrom(
-      this.client.send('affiliate.findDocument', { affiliateId, procedureDocumentId }),
-    );
+    const documentPdf = await this.nats.firstValue('affiliate.findDocument', {
+      affiliateId,
+      procedureDocumentId,
+    });
 
     res.set({
       'Content-Type': 'application/pdf',
@@ -129,6 +125,6 @@ export class AffiliatesController {
     @Param('affiliateId') affiliateId: string,
     @Param('modalityId') modalityId: string,
   ) {
-    return this.client.send('affiliate.collateDocuments', { affiliateId, modalityId });
+    return this.nats.send('affiliate.collateDocuments', { affiliateId, modalityId });
   }
 }
