@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { NatsModule } from 'src/transports/nats.module';
 import {
   CategoriesController,
   ProcedureDocumentsController,
@@ -25,6 +24,6 @@ import {
     ModulesController,
   ],
   providers: [],
-  imports: [NatsModule],
+  imports: [],
 })
 export class GeneralModule {}
