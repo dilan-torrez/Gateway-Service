@@ -3,15 +3,15 @@ import * as winston from 'winston';
 import { Client } from 'pg';
 import { PostgresTransport } from './postgresTransport';
 import 'winston-daily-rotate-file';
-import { envs } from './envs';
+import { DbEnvs } from './envs';
 
 // Configura el cliente de PostgreSQL
 const pgClient = new Client({
-  host: envs.dbHost,
-  port: envs.dbPort,
-  user: envs.dbUsername,
-  password: envs.dbPassword,
-  database: envs.dbName,
+  host: DbEnvs.dbHost,
+  port: DbEnvs.dbPort,
+  user: DbEnvs.dbUsername,
+  password: DbEnvs.dbPassword,
+  database: DbEnvs.dbDatabase,
 });
 pgClient.connect();
 
