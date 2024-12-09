@@ -1,29 +1,18 @@
-import {
-  Body,
-  Controller,
-  Get,
-  HttpException,
-  Inject,
-  Param,
-  Headers,
-  Res,
-  Post,
-} from '@nestjs/common';
-import { ClientProxy } from '@nestjs/microservices';
+import { Body, Controller, Get, Param, Headers, Res, Post } from '@nestjs/common';
 import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { catchError, firstValueFrom } from 'rxjs';
-import { PvtEnvs, NATS_SERVICE } from 'src/config';
+import { firstValueFrom } from 'rxjs';
+import { PvtEnvs } from 'src/config';
 import * as bcrypt from 'bcrypt';
 import { HttpService } from '@nestjs/axios';
 import { Response } from 'express';
 import { SaveDataKioskAuthDto } from './dto/save-data-kiosk-auth.dto';
+import { NatsService } from 'src/common';
 
 @Controller('kiosk')
 @ApiTags('kiosk')
 export class KioskController {
   constructor(
-    @Inject(NATS_SERVICE)
-    private readonly client: ClientProxy,
+    private readonly nats: NatsService,
     private readonly httpService: HttpService,
   ) {}
 
@@ -33,21 +22,13 @@ export class KioskController {
     description: 'Mostrar el listado de huellas digitales',
   })
   async showListFingerprint(@Param('identityCard') identityCard: string) {
-    return this.client.send('kiosk.getDataPerson', identityCard).pipe(
-      catchError((err) => {
-        throw new HttpException(err, err.statusCode);
-      }),
-    );
+    return this.nats.send('kiosk.getDataPerson', identityCard);
   }
 
   @Post('saveDataKioskAuth')
   @ApiBody({ type: SaveDataKioskAuthDto })
   async saveDataKioskAuth(@Body() data: SaveDataKioskAuthDto) {
-    return this.client.send('kiosk.saveDataKioskAuth', data).pipe(
-      catchError((err) => {
-        throw new HttpException(err, err.statusCode);
-      }),
-    );
+    return this.nats.send('kiosk.saveDataKioskAuth', data);
   }
 
   @Get('person/:identityCard/ecoCom')
