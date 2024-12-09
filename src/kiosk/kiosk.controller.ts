@@ -1,11 +1,23 @@
-import { Body, Controller, Get, Param, Headers, Res, Post } from '@nestjs/common';
-import { ApiBody, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Headers,
+  Res,
+  Post,
+  UploadedFiles,
+  UseInterceptors,
+} from '@nestjs/common';
+import { ApiBody, ApiConsumes, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
 import { PvtEnvs } from 'src/config';
 import * as bcrypt from 'bcrypt';
 import { HttpService } from '@nestjs/axios';
 import { Response } from 'express';
 import { SaveDataKioskAuthDto } from './dto/save-data-kiosk-auth.dto';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { UploadPhotosDto } from './dto/save-photos.dto';
 import { NatsService } from 'src/common';
 
 @Controller('kiosk')
@@ -29,6 +41,28 @@ export class KioskController {
   @ApiBody({ type: SaveDataKioskAuthDto })
   async saveDataKioskAuth(@Body() data: SaveDataKioskAuthDto) {
     return this.nats.send('kiosk.saveDataKioskAuth', data);
+  }
+
+  @Post('savePhoto')
+  @UseInterceptors(
+    FileFieldsInterceptor([
+      { name: 'photoIdentityCard', maxCount: 1 },
+      { name: 'photoFace', maxCount: 1 },
+    ]),
+  )
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({ type: UploadPhotosDto })
+  async uploadPhoto(
+    @UploadedFiles()
+    files: { photoIdentityCard?: Express.Multer.File[]; photoFace?: Express.Multer.File[] },
+    @Body() body: UploadPhotosDto,
+  ) {
+    const payload = {
+      personId: body.personId,
+      photoIdentityCard: files.photoIdentityCard?.[0]?.buffer,
+      photoFace: files.photoFace?.[0]?.buffer,
+    };
+    return this.nats.send('kiosk.savePhotos', payload);
   }
 
   @Get('person/:identityCard/ecoCom')
