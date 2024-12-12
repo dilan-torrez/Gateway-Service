@@ -81,7 +81,7 @@ export class KioskController {
     }
     // El hash2 se usa para comparar con la libreria bcrypt, es un problema de versiones con el hash nativo de laravel
     const hash2 = hash.replace(/^\$2y(.+)$/i, '$2a$1');
-    const url = `${PvtEnvs.PvtApiServer}/kioskoComplemento?ci=${identityCard}`;
+    const url = `${PvtEnvs.PvtBeApiServer}/kioskoComplemento?ci=${identityCard}`;
     try {
       if (await bcrypt.compare(PvtEnvs.PvtHashSecret, hash2)) {
         const { data } = await firstValueFrom(
@@ -111,7 +111,7 @@ export class KioskController {
     }
     // El hash2 se usa para comparar con la libreria bcrypt, es un problema de versiones con el hash nativo de laravel
     const hash2 = hash.replace(/^\$2y(.+)$/i, '$2a$1');
-    const url = `${PvtEnvs.PvtApiServer}/eco_com/${id}`;
+    const url = `${PvtEnvs.PvtBeApiServer}/eco_com/${id}`;
     try {
       if (await bcrypt.compare(PvtEnvs.PvtHashSecret, hash2)) {
         const { data } = await firstValueFrom(
@@ -141,7 +141,7 @@ export class KioskController {
     }
     // El hash2 se usa para comparar con la libreria bcrypt, es un problema de versiones con el hash nativo de laravel
     const hash2 = hash.replace(/^\$2y(.+)$/i, '$2a$1');
-    const url = `${PvtEnvs.PvtApiServer}/eco_com`;
+    const url = `${PvtEnvs.PvtBeApiServer}/eco_com`;
     try {
       if (await bcrypt.compare(PvtEnvs.PvtHashSecret, hash2)) {
         const { data } = await firstValueFrom(
@@ -157,5 +157,60 @@ export class KioskController {
     } catch (error) {
       return error.response.data;
     }
+  }
+
+  @Get('procedures/:identityCard')
+  @ApiResponse({
+    status: 200,
+    description: 'Obtener préstamos de un afiliado',
+  })
+  async getAffiliateLoans(
+    @Headers('authorization') authorization: string,
+    @Param('identityCard') identityCard: string,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    let hash: string;
+    let ecoComResponse: any = null;
+    let loansResponse: any = null;
+    if (authorization && authorization.startsWith('Bearer ')) {
+      hash = authorization.split(' ')[1];
+    }
+    const hash2 = hash?.replace(/^\$2y(.+)$/i, '$2a$1');
+    const ecoComUrl = `${PvtEnvs.PvtBeApiServer}/kioskoComplemento?ci=${identityCard}`;
+    const loansUrl = `${PvtEnvs.PvtBackendApiServer}/kiosk/get_affiliate_loans/${identityCard}`;
+    if (hash && (await bcrypt.compare(PvtEnvs.PvtHashSecret, hash2))) {
+      try {
+        const { data } = await firstValueFrom(
+          this.httpService.get(ecoComUrl, { headers: { Authorization: `Bearer ${hash}` } }),
+        );
+        ecoComResponse = data;
+      } catch (error) {
+        ecoComResponse = {
+          error: true,
+          message: error.response?.data?.message || 'Error al verificar complemento',
+        };
+      }
+
+      try {
+        const { data } = await firstValueFrom(this.httpService.get(loansUrl));
+        const loans = data.payload?.current?.length > 0;
+        loansResponse = { loans };
+      } catch (error) {
+        loansResponse = {
+          error: true,
+          message: error.response?.data?.message || 'Error al obtener préstamos',
+        };
+      }
+    } else {
+      res.status(401).json({
+        error: true,
+        message: 'Token no válido',
+      });
+      return;
+    }
+    return {
+      ecoCom: ecoComResponse.error,
+      loans: loansResponse.loans,
+    };
   }
 }
