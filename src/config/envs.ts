@@ -8,7 +8,8 @@ interface EnvVars {
 
   FRONTENDS_SERVERS: string[];
 
-  PVT_API_SERVER: string;
+  PVT_BE_API_SERVER: string;
+  PVT_BACKEND_API_SERVER: string;
   PVT_HASH_SECRET: string;
 
   DB_PASSWORD: string;
@@ -69,6 +70,7 @@ export const FrontEnvs = {
 };
 
 export const PvtEnvs = {
-  PvtApiServer: envVars.PVT_API_SERVER,
+  PvtBeApiServer: envVars.PVT_BE_API_SERVER,
+  PvtBackendApiServer: envVars.PVT_BACKEND_API_SERVER,
   PvtHashSecret: envVars.PVT_HASH_SECRET,
 };
