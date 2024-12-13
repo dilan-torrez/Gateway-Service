@@ -177,7 +177,7 @@ export class KioskController {
     }
     const hash2 = hash?.replace(/^\$2y(.+)$/i, '$2a$1');
     const ecoComUrl = `${PvtEnvs.PvtBeApiServer}/kioskoComplemento?ci=${identityCard}`;
-    const loansUrl = `${PvtEnvs.PvtBackendApiServer}/kiosk/get_affiliate_loans/${identityCard}`;
+    const loansUrl = `${PvtEnvs.PvtBackendApiServer}/kiosk/verify_loans/${identityCard}`;
     if (hash && (await bcrypt.compare(PvtEnvs.PvtHashSecret, hash2))) {
       try {
         const { data } = await firstValueFrom(
@@ -193,8 +193,7 @@ export class KioskController {
 
       try {
         const { data } = await firstValueFrom(this.httpService.get(loansUrl));
-        const loans = data.payload?.current?.length > 0;
-        loansResponse = { loans };
+        loansResponse = data;
       } catch (error) {
         loansResponse = {
           error: true,
@@ -210,7 +209,7 @@ export class KioskController {
     }
     return {
       ecoCom: ecoComResponse.error,
-      loans: loansResponse.loans,
+      loans: loansResponse.hasLoan,
     };
   }
 }
