@@ -65,6 +65,15 @@ export class KioskController {
     return this.nats.send('kiosk.savePhotos', payload);
   }
 
+  @Get('getFingerprintComparison/:id')
+  @ApiResponse({
+    status: 200,
+    description: 'Mostrar el listado de huellas digitales de una persona',
+  })
+  async getFingerprintComparison(@Param('id') id: number) {
+    return this.nats.send('kiosk.getFingerprintComparison', id);
+  }
+
   @Get('person/:identityCard/ecoCom')
   @ApiResponse({
     status: 200,
