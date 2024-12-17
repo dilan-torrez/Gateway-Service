@@ -174,51 +174,36 @@ export class KioskController {
     description: 'Obtener préstamos de un afiliado',
   })
   async getAffiliateLoans(
-    @Headers('authorization') authorization: string,
     @Param('identityCard') identityCard: string,
     @Res({ passthrough: true }) res: Response,
   ) {
-    let hash: string;
     let ecoComResponse: any = null;
     let loansResponse: any = null;
-    if (authorization && authorization.startsWith('Bearer ')) {
-      hash = authorization.split(' ')[1];
-    }
-    const hash2 = hash?.replace(/^\$2y(.+)$/i, '$2a$1');
     const ecoComUrl = `${PvtEnvs.PvtBeApiServer}/kioskoComplemento?ci=${identityCard}`;
     const loansUrl = `${PvtEnvs.PvtBackendApiServer}/kiosk/verify_loans/${identityCard}`;
-    if (hash && (await bcrypt.compare(PvtEnvs.PvtHashSecret, hash2))) {
-      try {
-        const { data } = await firstValueFrom(
-          this.httpService.get(ecoComUrl, { headers: { Authorization: `Bearer ${hash}` } }),
-        );
-        ecoComResponse = data;
-      } catch (error) {
-        ecoComResponse = {
-          error: true,
-          message: error.response?.data?.message || 'Error al verificar complemento',
-        };
-      }
-
-      try {
-        const { data } = await firstValueFrom(this.httpService.get(loansUrl));
-        loansResponse = data;
-      } catch (error) {
-        loansResponse = {
-          error: true,
-          message: error.response?.data?.message || 'Error al obtener préstamos',
-        };
-      }
-    } else {
-      res.status(401).json({
+    try {
+      const { data } = await firstValueFrom(this.httpService.get(ecoComUrl));
+      ecoComResponse = data;
+    } catch (error) {
+      ecoComResponse = {
         error: true,
-        message: 'Token no válido',
-      });
-      return;
+        message: error.response?.data?.message || 'Error al verificar complemento',
+      };
+    }
+
+    try {
+      const { data } = await firstValueFrom(this.httpService.get(loansUrl));
+      loansResponse = data;
+    } catch (error) {
+      loansResponse = {
+        error: true,
+        message: error.response?.data?.message || 'Error al obtener préstamos',
+      };
     }
     return {
       ecoCom: ecoComResponse.error,
       loans: loansResponse.hasLoan,
+      contributions: true,
     };
   }
 }
