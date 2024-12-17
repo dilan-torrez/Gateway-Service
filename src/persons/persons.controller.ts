@@ -148,13 +148,4 @@ export class PersonsController {
   async showFingerprintRegistered(@Param('id') id: string) {
     return this.nats.send('person.showFingerprintRegistered', { id });
   }
-
-  @Get('getFingerprintComparison/:id')
-  @ApiResponse({
-    status: 200,
-    description: 'Mostrar el listado de huellas digitales de una persona',
-  })
-  async getFingerprintComparison(@Param('id') id: string) {
-    return this.nats.send('person.getFingerprintComparison', { id });
-  }
 }
