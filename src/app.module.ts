@@ -8,6 +8,14 @@ import { CommonModule } from './common/common.module';
 import { DatabaseModule } from './database/database.module';
 
 @Module({
-  imports: [AuthModule, PersonsModule, GeneralModule, AffiliatesModule, KioskModule, CommonModule, DatabaseModule],
+  imports: [
+    AuthModule,
+    PersonsModule,
+    GeneralModule,
+    AffiliatesModule,
+    KioskModule,
+    CommonModule,
+    DatabaseModule,
+  ],
 })
 export class AppModule {}
