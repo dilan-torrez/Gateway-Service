@@ -11,8 +11,9 @@ COPY . .
 
 RUN yarn run build
 
-CMD ["node", "dist/main.js"]
+RUN yarn migration:run
 
+CMD ["node", "dist/main.js"]
 
 # docker build -f dockerfile.prod -t microservice-gateway .
 # docker run -p 3000:3000 microservice-gateway
