@@ -18,7 +18,7 @@ import { Response } from 'express';
 import { SaveDataKioskAuthDto } from './dto/save-data-kiosk-auth.dto';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { UploadPhotosDto } from './dto/save-photos.dto';
-import { NatsService } from 'src/common';
+import { NatsService, RecordService } from 'src/common';
 
 @Controller('kiosk')
 @ApiTags('kiosk')
@@ -26,6 +26,7 @@ export class KioskController {
   constructor(
     private readonly nats: NatsService,
     private readonly httpService: HttpService,
+    private readonly recordService: RecordService,
   ) {}
 
   @Get('person/:identityCard')
@@ -34,12 +35,14 @@ export class KioskController {
     description: 'Mostrar el listado de huellas digitales',
   })
   async showListFingerprint(@Param('identityCard') identityCard: string) {
+    this.recordService.debug(`GET: person/${identityCard}`);
     return this.nats.send('kiosk.getDataPerson', identityCard);
   }
 
   @Post('saveDataKioskAuth')
   @ApiBody({ type: SaveDataKioskAuthDto })
   async saveDataKioskAuth(@Body() data: SaveDataKioskAuthDto) {
+    this.recordService.debug(`POST: saveDataKioskAuth`);
     return this.nats.send('kiosk.saveDataKioskAuth', data);
   }
 
@@ -57,6 +60,7 @@ export class KioskController {
     files: { photoIdentityCard?: Express.Multer.File[]; photoFace?: Express.Multer.File[] },
     @Body() body: UploadPhotosDto,
   ) {
+    this.recordService.debug(`POST: savePhoto`);
     const payload = {
       personId: body.personId,
       photoIdentityCard: files.photoIdentityCard?.[0]?.buffer,
@@ -71,6 +75,7 @@ export class KioskController {
     description: 'Mostrar el listado de huellas digitales de una persona',
   })
   async getFingerprintComparison(@Param('id') id: number) {
+    this.recordService.debug(`GET: getFingerprintComparison/${id}`);
     return this.nats.send('kiosk.getFingerprintComparison', id);
   }
 
@@ -84,6 +89,7 @@ export class KioskController {
     @Param('identityCard') identityCard: string,
     @Res({ passthrough: true }) res: Response,
   ) {
+    this.recordService.debug(`GET: person/${identityCard}/ecoCom`);
     let hash: string;
     if (authorization && authorization.startsWith('Bearer ')) {
       hash = authorization.split(' ')[1];
@@ -114,6 +120,7 @@ export class KioskController {
     @Param('id') id: string,
     @Res({ passthrough: true }) res: Response,
   ) {
+    this.recordService.debug(`GET: ecoCom/${id}`);
     let hash: string;
     if (authorization && authorization.startsWith('Bearer ')) {
       hash = authorization.split(' ')[1];
@@ -144,6 +151,7 @@ export class KioskController {
     @Res({ passthrough: true }) res: Response,
     @Body() body,
   ) {
+    this.recordService.debug(`POST: ecoCom`);
     let hash: string;
     if (authorization && authorization.startsWith('Bearer ')) {
       hash = authorization.split(' ')[1];
@@ -177,6 +185,7 @@ export class KioskController {
     @Param('identityCard') identityCard: string,
     @Res({ passthrough: true }) res: Response,
   ) {
+    this.recordService.debug(`GET: procedures/${identityCard}`);
     let ecoComResponse: any = null;
     let loansResponse: any = null;
     const ecoComUrl = `${PvtEnvs.PvtBeApiServer}/kioskoComplemento?ci=${identityCard}`;
@@ -201,7 +210,7 @@ export class KioskController {
       };
     }
     return {
-      ecoCom: ecoComResponse.error,
+      ecoCom: !ecoComResponse.error,
       loans: loansResponse.hasLoan,
       contributions: true,
     };

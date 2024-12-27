@@ -21,6 +21,9 @@ export class RecordService {
       action,
     });
   }
+  debug(message: any) {
+    this.auditLogger.debug(message);
+  }
   info(message: any) {
     this.auditLogger.info(message);
   }
