@@ -13,7 +13,7 @@ async function bootstrap() {
   app.enableCors({
     origin: FrontEnvs.frontendServers,
     methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS', // Añadir OPTIONS
-    allowedHeaders: 'Content-Type, Authorization, Credentials',
+    allowedHeaders: ['Content-Type', 'Authorization', 'credentials'],
     credentials: true, // Si estás utilizando cookies o encabezados de autenticación
   });
   app.useGlobalPipes(
