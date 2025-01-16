@@ -5,7 +5,6 @@ import {
   Post,
   UploadedFile,
   UseInterceptors,
-  UsePipes,
   Res,
   Req,
   UseGuards,
@@ -69,12 +68,11 @@ export class AffiliatesController {
   })
   @UseGuards(AuthGuard)
   @UseInterceptors(FileInterceptor('documentPdf'))
-  @UsePipes(new FileRequiredPipe())
   async createOrUpdateDocument(
     @Req() req: any,
     @Param('affiliateId') affiliateId: string,
     @Param('procedureDocumentId') procedureDocumentId: string,
-    @UploadedFile() documentPdf: Express.Multer.File,
+    @UploadedFile(new FileRequiredPipe()) documentPdf: Express.Multer.File,
   ) {
     this.recordService.http(
       `Registro de documento [${procedureDocumentId}]`,
