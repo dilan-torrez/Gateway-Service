@@ -6,6 +6,12 @@ export class FileRequiredPipe implements PipeTransform {
     if (!file) {
       throw new BadRequestException('El archivo PDF es obligatorio');
     }
+    console.log('validación');
+
+    if (file.mimetype !== 'application/pdf') {
+      throw new BadRequestException('El archivo debe ser PDF');
+    }
+
     return file;
   }
 }
