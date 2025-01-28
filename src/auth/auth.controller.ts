@@ -30,7 +30,9 @@ export class AuthController {
       const timeLong = 24 * 365; // horas * dias - 1 año
       const oneHourMiliseconds = 3600000;
       this.logger.log('Login successful');
-      this.recordService.http('Inicio de sesion exitosa', data.user.username, 1, 1, 'User');
+      if (data.user.username != 'pvtbe') {
+        this.recordService.http('Inicio de sesion exitosa', data.user.username, 1, 1, 'User');
+      }
       res
         .cookie('msp', data.access_token, {
           path: '/',
