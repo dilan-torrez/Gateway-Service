@@ -47,7 +47,7 @@ export class PersonsController {
   @Get(':term')
   @ApiResponse({ status: 200, description: 'Mostrar una persona' })
   async findOnePersons(@Param('term') term: string) {
-    return this.nats.send('person.findOne', { term });
+    return this.nats.send('person.findOne', { term, field: 'id' });
   }
 
   @Post()
