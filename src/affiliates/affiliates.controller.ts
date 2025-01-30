@@ -8,6 +8,7 @@ import {
   Res,
   Req,
   UseGuards,
+  Body,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -124,5 +125,25 @@ export class AffiliatesController {
     @Param('modalityId') modalityId: string,
   ) {
     return this.nats.send('affiliate.collateDocuments', { affiliateId, modalityId });
+  }
+
+  @Post('documents/analysis')
+  async documentsAnalysis(@Body() body: { path: string; user: string; pass: string }) {
+    const { path, user, pass } = body;
+
+    this.recordService.http(
+      `Realizo el análisis de documentos en la ruta ${path}`,
+      user,
+      1,
+      1,
+      'User',
+    );
+
+    return this.nats.send('affiliate.documentsAnalysis', { path, user, pass });
+  }
+
+  @Post('documents/imports')
+  async documentsImports(@Body() body: object) {
+    return this.nats.send('affiliate.documentsImports', body);
   }
 }
