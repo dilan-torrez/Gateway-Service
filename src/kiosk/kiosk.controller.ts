@@ -181,10 +181,7 @@ export class KioskController {
     status: 200,
     description: 'Obtener préstamos de un afiliado',
   })
-  async getAffiliateLoans(
-    @Param('identityCard') identityCard: string,
-    @Res({ passthrough: true }) res: Response,
-  ) {
+  async getAffiliateLoans(@Param('identityCard') identityCard: string) {
     this.recordService.debug(`GET: procedures/${identityCard}`);
     let ecoComResponse: any = null;
     let loansResponse: any = null;
@@ -195,7 +192,8 @@ export class KioskController {
       ecoComResponse = data;
     } catch (error) {
       ecoComResponse = {
-        error: true,
+        error: error.response?.data?.error,
+        canCreate: error.response?.data?.canCreate,
         message: error.response?.data?.message || 'Error al verificar complemento',
       };
     }
@@ -210,9 +208,13 @@ export class KioskController {
       };
     }
     return {
-      ecoCom: !ecoComResponse.error,
-      loans: loansResponse.hasLoan,
-      contributions: true,
+      ecoCom: {
+        canShow: !ecoComResponse.error,
+        canCreate: ecoComResponse.canCreate,
+        message: ecoComResponse.message,
+      },
+      loans: { canShow: loansResponse.hasLoan },
+      contributions: { canShow: true },
     };
   }
 }
