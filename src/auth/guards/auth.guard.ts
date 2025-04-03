@@ -20,18 +20,30 @@ export class AuthGuard implements CanActivate {
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request: Request = context.switchToHttp().getRequest();
+    const apiKey = request.headers['x-api-key'] as string;
     const token = this.extractTokenFromHeader(request);
-    let username: string;
-    if (!token) {
+    if (!token && !apiKey) {
       throw new NotFoundException({ error: true, message: 'Token no encontrado' });
     }
-    try {
-      username = (await this.nats.firstValue('auth.verify', token)).username;
-      request['user'] = username;
-      return true;
-    } catch {
-      this.recordService.warn({ ip: request.ip, message: 'Sin autorización' });
-      throw new UnauthorizedException({ error: true, message: 'Sin autorización' });
+    if (!!apiKey) {
+      try {
+        const isValid = await this.nats.firstValue('auth.verify.apikey', apiKey);
+        return isValid;
+      } catch (error) {
+        this.recordService.warn({ ip: request.ip, message: 'Api Key inválida' });
+        throw new UnauthorizedException({ error: true, message: 'Sin autorización' });
+      }
+    }
+    if (!!token) {
+      try {
+        const username = (await this.nats.firstValue('auth.verify.token', token))
+          .username as string;
+        request['user'] = username;
+        return true;
+      } catch {
+        this.recordService.warn({ ip: request.ip, message: 'Sin autorización' });
+        throw new UnauthorizedException({ error: true, message: 'Sin autorización' });
+      }
     }
   }
 
