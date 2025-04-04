@@ -115,6 +115,7 @@ export class AffiliatesController {
     res.send(Buffer.from(documentPdf, 'base64'));
   }
 
+  @UseGuards(AuthGuard)
   @Get(':affiliateId/modality/:modalityId/collate')
   @ApiResponse({
     status: 200,

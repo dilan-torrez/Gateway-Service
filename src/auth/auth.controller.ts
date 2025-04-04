@@ -2,6 +2,7 @@ import { Body, Controller, Get, Logger, Post, Query, Res } from '@nestjs/common'
 import { LoginUserDto } from './dto';
 import { Response } from 'express';
 import { NatsService, RecordService } from 'src/common';
+import { CurrentUser } from './interfaces/current-user.interface';
 
 @Controller('auth')
 export class AuthController {
@@ -12,22 +13,11 @@ export class AuthController {
   ) {}
 
   @Post('login')
-  async loginUser(
-    @Body() loginUserDto: LoginUserDto,
-    @Query() query: any,
-    @Res({ passthrough: true }) res: Response,
-  ) {
+  async loginUser(@Body() loginUserDto: LoginUserDto, @Res({ passthrough: true }) res: Response) {
     this.logger.log({ username: loginUserDto.username });
     try {
-      const { longToken } = query;
-      let data: any;
-      if (longToken) {
-        data = await this.nats.firstValue('auth.login', { ...loginUserDto, longToken: true });
-      } else {
-        data = await this.nats.firstValue('auth.login', loginUserDto);
-      }
+      const data: CurrentUser = await this.nats.firstValue('auth.login', loginUserDto);
       const timeShort = 4; // 4 horas
-      const timeLong = 24 * 365; // horas * dias - 1 año
       const oneHourMiliseconds = 3600000;
       this.logger.log('Login successful');
       if (data.user.username != 'pvtbe') {
@@ -38,7 +28,7 @@ export class AuthController {
           path: '/',
           httpOnly: true,
           sameSite: 'strict',
-          expires: new Date(Date.now() + (longToken ? timeLong : timeShort) * oneHourMiliseconds),
+          expires: new Date(Date.now() + timeShort * oneHourMiliseconds),
         })
         .status(200)
         .json({
