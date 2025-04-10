@@ -1,9 +1,12 @@
-import { Body, Controller, Get, Logger, Post, Query, Res } from '@nestjs/common';
+import { Body, Controller, Get, Logger, Post, Res } from '@nestjs/common';
 import { LoginUserDto } from './dto';
 import { Response } from 'express';
 import { NatsService, RecordService } from 'src/common';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { LdapUserDto } from '../common/dto/ldap-user.dto';
 import { CurrentUser } from './interfaces/current-user.interface';
 
+@ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   private readonly logger = new Logger('AuthController');
@@ -54,5 +57,16 @@ export class AuthController {
     res.status(200).json({
       message: 'Logout successful',
     });
+  }
+
+  @Get('ldapUsers')
+  @ApiOperation({ summary: 'Obtener todos los usuarios LDAP' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de usuarios encontrados',
+    type: [LdapUserDto],
+  })
+  async getLdapUsers(): Promise<LdapUserDto[]> {
+    return this.nats.firstValue('auth.ldap.getAllUsers', {});
   }
 }
