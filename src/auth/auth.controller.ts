@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Logger, Post, Query, Res } from '@nestjs/common';
+import { Body, Controller, Get, Logger, Post, Res } from '@nestjs/common';
 import { LoginUserDto } from './dto';
 import { Response } from 'express';
 import { NatsService, RecordService } from 'src/common';
@@ -23,18 +23,33 @@ export class AuthController {
       if (data.user.username != 'pvtbe') {
         this.recordService.http('Inicio de sesion exitosa', data.user.username, 1, 1, 'User');
       }
-      res
-        .cookie('msp', data.access_token, {
-          path: '/',
-          httpOnly: true,
-          sameSite: 'strict',
-          expires: new Date(Date.now() + timeShort * oneHourMiliseconds),
-        })
-        .status(200)
-        .json({
-          message: 'Login successful',
-          user: data.user,
-        });
+      res.cookie('msp', data.access_token, {
+        path: '/',
+        httpOnly: true,
+        sameSite: 'strict',
+        expires: new Date(Date.now() + timeShort * oneHourMiliseconds),
+      });
+      res.cookie('modules', data.user.modules, {
+        path: '/',
+        httpOnly: true,
+        sameSite: 'strict',
+        expires: new Date(Date.now() + timeShort * oneHourMiliseconds),
+      });
+      res.cookie('roles', data.user.roles, {
+        path: '/',
+        httpOnly: true,
+        sameSite: 'strict',
+        expires: new Date(Date.now() + timeShort * oneHourMiliseconds),
+      });
+      res.cookie('user', data.user.userData, {
+        path: '/',
+        httpOnly: true,
+        sameSite: 'strict',
+        expires: new Date(Date.now() + timeShort * oneHourMiliseconds),
+      });
+      res.status(200).json({
+        message: 'Login successful',
+      });
     } catch (error) {
       this.logger.error(error);
       res.status(401).json({
