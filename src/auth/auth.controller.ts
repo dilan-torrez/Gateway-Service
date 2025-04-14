@@ -41,7 +41,7 @@ export class AuthController {
         sameSite: 'strict',
         expires: new Date(Date.now() + timeShort * oneHourMiliseconds),
       });
-      res.cookie('user', data.user.userData, {
+      res.cookie('user', data.user.data, {
         path: '/',
         httpOnly: true,
         sameSite: 'strict',

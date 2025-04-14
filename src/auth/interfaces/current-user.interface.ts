@@ -2,7 +2,7 @@ export interface CurrentUser {
   access_token: string;
   user: {
     username: string;
-    userData: { username: string; name: string; userId: number };
+    data: { username: string; name: string; id: number };
     modules: [];
     roles: [];
   };
