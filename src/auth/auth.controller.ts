@@ -32,19 +32,19 @@ export class AuthController {
         sameSite: 'strict',
         expires: new Date(Date.now() + timeShort * oneHourMiliseconds),
       });
-      res.cookie('modules', data.user.modules, {
+      res.cookie('modules', JSON.stringify(data.user.modules), {
         path: '/',
         httpOnly: true,
         sameSite: 'strict',
         expires: new Date(Date.now() + timeShort * oneHourMiliseconds),
       });
-      res.cookie('roles', data.user.roles, {
+      res.cookie('roles', JSON.stringify(data.user.roles), {
         path: '/',
         httpOnly: true,
         sameSite: 'strict',
         expires: new Date(Date.now() + timeShort * oneHourMiliseconds),
       });
-      res.cookie('user', data.user.data, {
+      res.cookie('user', JSON.stringify(data.user.data), {
         path: '/',
         httpOnly: true,
         sameSite: 'strict',
