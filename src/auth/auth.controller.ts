@@ -38,18 +38,23 @@ export class AuthController {
         sameSite: 'strict',
         expires: new Date(Date.now() + timeShort * oneHourMiliseconds),
       });
-      res.cookie('roles', JSON.stringify(data.user.roles), {
-        path: '/',
-        httpOnly: true,
-        sameSite: 'strict',
-        expires: new Date(Date.now() + timeShort * oneHourMiliseconds),
-      });
       res.cookie('user', JSON.stringify(data.user.data), {
         path: '/',
         httpOnly: true,
         sameSite: 'strict',
         expires: new Date(Date.now() + timeShort * oneHourMiliseconds),
       });
+      if (data.user.modulesWithRoles && Array.isArray(data.user.modulesWithRoles)) {
+        for (const module of data.user.modulesWithRoles) {
+          const cookieName = `mod_${module.name}`; // Nombre de la cookie, por ejemplo: mod_1, mod_2
+          res.cookie(cookieName, JSON.stringify(module), {
+            path: '/',
+            httpOnly: true,
+            sameSite: 'strict',
+            expires: new Date(Date.now() + timeShort * oneHourMiliseconds),
+          });
+        }
+      }
       res.status(200).json({
         message: 'Login successful',
       });
