@@ -46,7 +46,7 @@ export class AuthController {
       });
       if (data.user.modulesWithRoles && Array.isArray(data.user.modulesWithRoles)) {
         for (const module of data.user.modulesWithRoles) {
-          const cookieName = `mod_${module.name}`; // Nombre de la cookie, por ejemplo: mod_1, mod_2
+          const cookieName = `mod_${module.id}`;
           res.cookie(cookieName, JSON.stringify(module), {
             path: '/',
             httpOnly: true,
