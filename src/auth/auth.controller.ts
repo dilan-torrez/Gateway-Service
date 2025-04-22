@@ -5,6 +5,7 @@ import { NatsService, RecordService } from 'src/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { LdapUserDto } from '../common/dto/ldap-user.dto';
 import { CurrentUser } from './interfaces/current-user.interface';
+import { UserListDto } from 'src/common/dto/user.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -88,5 +89,17 @@ export class AuthController {
   })
   async getLdapUsers(): Promise<LdapUserDto[]> {
     return this.nats.firstValue('auth.ldap.getAllUsers', {});
+  }
+
+  @Get('users')
+  @ApiOperation({ summary: 'Obtener todos los usuarios' })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista de usuarios encontrada',
+    type: [UserListDto],
+  })
+  async getAllUsers() {
+    console.log('getAllUsers');
+    return this.nats.firstValue('get_all_users', {});
   }
 }
