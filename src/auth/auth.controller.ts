@@ -1,11 +1,11 @@
-import { Body, Controller, Get, Logger, Post, Res } from '@nestjs/common';
+import { Body, Controller, Get, Logger, Param, Post, Res } from '@nestjs/common';
 import { LoginUserDto } from './dto';
 import { Response } from 'express';
 import { NatsService, RecordService } from 'src/common';
 import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
-import { LdapUserDto } from '../common/dto/ldap-user.dto';
+import { LdapUserDto } from './dto/ldap-user.dto';
 import { CurrentUser } from './interfaces/current-user.interface';
-import { UserListDto } from 'src/common/dto/user.dto';
+import { UserListDto } from 'src/auth/dto/user-list.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
