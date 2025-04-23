@@ -6,6 +6,7 @@ import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { LdapUserDto } from './dto/ldap-user.dto';
 import { CurrentUser } from './interfaces/current-user.interface';
 import { UserListDto } from 'src/auth/dto/user-list.dto';
+import { UserDetailDto } from 'src/auth/dto/user-detail.dto';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -101,5 +102,16 @@ export class AuthController {
   async getAllUsers() {
     console.log('getAllUsers');
     return this.nats.firstValue('get_all_users', {});
+  }
+
+  @Get('users/:uuid')
+  @ApiOperation({ summary: 'Obtener un usuario por UUID' })
+  @ApiResponse({
+    status: 200,
+    description: 'Usuario encontrado',
+    type: UserDetailDto,
+  })
+  async getUserById(@Param('uuid') uuid: string) {
+    return this.nats.firstValue('get_user', { uuid });
   }
 }
