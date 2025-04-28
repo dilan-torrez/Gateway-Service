@@ -30,6 +30,15 @@ async function bootstrap() {
     .setTitle('APIS DOCUMENTATION')
     .setDescription('Documentation of the Muserpol Microservices APIs')
     .setVersion('1.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        in: 'header',
+      },
+      'access-token',
+    )
     .build();
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('api', app, document);
