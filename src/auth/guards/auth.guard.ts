@@ -9,6 +9,7 @@ import {
 
 import { Request } from 'express';
 import { NatsService, RecordService } from 'src/common';
+import { AuthenticatedRequest } from '../interfaces/authenticated-request.interface';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -19,7 +20,7 @@ export class AuthGuard implements CanActivate {
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
-    const request: Request = context.switchToHttp().getRequest();
+    const request: AuthenticatedRequest = context.switchToHttp().getRequest();
     const apiKey = request.headers['x-api-key'] as string;
     const token = this.extractTokenFromHeader(request);
     if (!token && !apiKey) {
@@ -34,11 +35,11 @@ export class AuthGuard implements CanActivate {
         throw new UnauthorizedException({ error: true, message: 'Sin autorización' });
       }
     }
+
     if (!!token) {
       try {
-        const username = (await this.nats.firstValue('auth.verify.token', token))
-          .username as string;
-        request['user'] = username;
+        const user = await this.nats.firstValue('auth.verify.token', token);
+        request.user = user;
         return true;
       } catch {
         this.recordService.warn({ ip: request.ip, message: 'Sin autorización' });
