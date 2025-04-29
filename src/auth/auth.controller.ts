@@ -125,7 +125,7 @@ export class AuthController {
   @UseGuards(AuthGuard)
   @Get('userManagementRoles')
   @ApiOperation({ summary: 'Obtener los roles de gestión de usuarios' })
-  async getUserMangementRoles(@User() user: JwtPayload) {
-    return this.nats.firstValue('user.ManagementRolesByUser', { userId: user.id });
+  async getUserManagementRoles(@User() user: JwtPayload) {
+    return this.nats.firstValue('user.managementRolesByUser', { userId: user.id });
   }
 }
