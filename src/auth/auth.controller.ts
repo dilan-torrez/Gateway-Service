@@ -1,12 +1,16 @@
-import { Body, Controller, Get, Logger, Param, Post, Res } from '@nestjs/common';
+import { Body, Controller, Get, Logger, Param, Post, Res, UseGuards } from '@nestjs/common';
 import { LoginUserDto, LdapUserDto, UserDetailDto, UserListDto } from './dto';
 import { Response } from 'express';
 import { NatsService, RecordService } from 'src/common';
-import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from './interfaces/current-user.interface';
+import { AuthGuard } from './guards/auth.guard';
+import { User } from './decorators/user.decorator';
+import { JwtPayload } from './interfaces/jwt-payload.interface';
 
 @ApiTags('Auth')
 @Controller('auth')
+@ApiBearerAuth('access-token')
 export class AuthController {
   private readonly logger = new Logger('AuthController');
   constructor(
@@ -15,6 +19,14 @@ export class AuthController {
   ) {}
 
   @Post('login')
+  @ApiBody({
+    schema: {
+      example: {
+        username: 'example',
+        password: 'contraseña',
+      },
+    },
+  })
   async loginUser(@Body() loginUserDto: LoginUserDto, @Res({ passthrough: true }) res: Response) {
     this.logger.log({ username: loginUserDto.username });
     try {
@@ -23,7 +35,7 @@ export class AuthController {
       const oneHourMiliseconds = 3600000;
       this.logger.log('Login successful');
       if (data.user.username != 'pvtbe') {
-        this.recordService.http('Inicio de sesion exitosa', data.user.username, 1, 1, 'User');
+        this.recordService.http('Inicio de sesion exitosa', data.user.data.username, 1, 1, 'User');
       }
       res.cookie('msp', data.access_token, {
         path: '/',
@@ -97,10 +109,8 @@ export class AuthController {
     type: [UserListDto],
   })
   async getAllUsers() {
-    console.log('getAllUsers');
     return this.nats.firstValue('get_all_users', {});
   }
-
   @Get('users/:uuid')
   @ApiOperation({ summary: 'Obtener un usuario por UUID' })
   @ApiResponse({
@@ -110,5 +120,13 @@ export class AuthController {
   })
   async getUserById(@Param('uuid') uuid: string) {
     return this.nats.firstValue('get_user', { uuid });
+  }
+
+  @UseGuards(AuthGuard)
+  @Get('user-management-roles')
+  @ApiOperation({ summary: 'Obtener los roles de gestión de usuarios' })
+  async getUserMangementRoles(@User() user: JwtPayload) {
+    console.log('el usuario autenticado es: ', user);
+    return this.nats.firstValue('get_user_management_roles', { userId: user.id });
   }
 }
