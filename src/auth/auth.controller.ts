@@ -109,7 +109,7 @@ export class AuthController {
     type: [UserListDto],
   })
   async getAllUsers() {
-    return this.nats.firstValue('get_all_users', {});
+    return this.nats.firstValue('user.getAll', {});
   }
   @Get('users/:uuid')
   @ApiOperation({ summary: 'Obtener un usuario por UUID' })
@@ -119,13 +119,13 @@ export class AuthController {
     type: UserDetailDto,
   })
   async getUserById(@Param('uuid') uuid: string) {
-    return this.nats.firstValue('get_user', { uuid });
+    return this.nats.firstValue('user.getByUuid', { uuid });
   }
 
   @UseGuards(AuthGuard)
   @Get('userManagementRoles')
   @ApiOperation({ summary: 'Obtener los roles de gestión de usuarios' })
   async getUserMangementRoles(@User() user: JwtPayload) {
-    return this.nats.firstValue('get_user_management_roles', { userId: user.id });
+    return this.nats.firstValue('user.ManagementRolesByUser', { userId: user.id });
   }
 }
