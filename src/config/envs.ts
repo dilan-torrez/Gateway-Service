@@ -70,7 +70,7 @@ export const FrontEnvs = {
 };
 
 export const PvtEnvs = {
-  PvtBeApiServer: envVars.PVT_BE_API_SERVER,
+  PvtBeApiServer: envVars.PVT_BE_API_SERVER+"/api/v1",
   PvtBackendApiServer: envVars.PVT_BACKEND_API_SERVER,
   PvtHashSecret: envVars.PVT_HASH_SECRET,
 };
