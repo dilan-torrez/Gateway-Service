@@ -191,6 +191,7 @@ export class KioskController {
       const { data } = await firstValueFrom(this.httpService.get(ecoComUrl));
       ecoComResponse = data;
     } catch (error) {
+      this.recordService.error({ url: ecoComUrl , message: error.message});
       ecoComResponse = {
         error: error.response?.data?.error,
         canCreate: error.response?.data?.canCreate,
