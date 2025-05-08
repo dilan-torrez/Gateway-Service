@@ -191,7 +191,7 @@ export class KioskController {
       const { data } = await firstValueFrom(this.httpService.get(ecoComUrl));
       ecoComResponse = data;
     } catch (error) {
-      this.recordService.error({ url: ecoComUrl , message: error.message});
+      this.recordService.warn({ url: ecoComUrl , message: error.message, response: error.response?.data?.message});
       ecoComResponse = {
         error: error.response?.data?.error,
         canCreate: error.response?.data?.canCreate,
@@ -203,7 +203,7 @@ export class KioskController {
       const { data } = await firstValueFrom(this.httpService.get(loansUrl));
       loansResponse = data;
     } catch (error) {
-      this.recordService.error({ url: loansUrl , message: error.message});
+      this.recordService.warn({ url: loansUrl , message: error.message, response: error.response?.data?.message});
       loansResponse = {
         error: true,
         message: error.response?.data?.message || 'Error al obtener préstamos',
