@@ -203,6 +203,7 @@ export class KioskController {
       const { data } = await firstValueFrom(this.httpService.get(loansUrl));
       loansResponse = data;
     } catch (error) {
+      this.recordService.error({ url: loansUrl , message: error.message});
       loansResponse = {
         error: true,
         message: error.response?.data?.message || 'Error al obtener préstamos',
