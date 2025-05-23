@@ -71,13 +71,13 @@ export class PersonsController {
     return this.nats.send('person.delete', { id });
   }
 
-  @Get('findPersonAffiliatesWithDetails/:id')
+  @Get('findBeneficiariesOfPerson/:personId')
   @ApiResponse({
     status: 200,
-    description: 'Mostrar una persona con su relación de personAffiliate',
+    description: 'Mostrar los beneficiarios de una persona',
   })
-  async findPersonAffiliate(@Param('id') id: string) {
-    return this.nats.send('person.findPersonAffiliatesWithDetails', { id });
+  async findPersonAffiliate(@Param('personId') id: string) {
+    return this.nats.send('person.getBeneficiariesOfAffiliate', { id });
   }
 
   @Get('showPersonsRelatedToAffiliate/:id')
