@@ -93,13 +93,13 @@ export class PersonsController {
     return this.nats.send('person.showPersonsRelatedToAffiliate', { id });
   }
 
-  @Get('findAffiliteRelatedWithPerson/:id')
+  @Get(':personId/Affiliates')
   @ApiResponse({
     status: 200,
     description: 'Mostrar una persona con su relación de personAffiliate',
   })
-  async findAffiliteRelatedWithPerson(@Param('id') id: string) {
-    return this.nats.send('person.findAffiliteRelatedWithPerson', { id });
+  async findAffiliteRelatedWithPerson(@Param('personId') id: string) {
+    return this.nats.send('person.findAffiliates', { id });
   }
 
   @UseGuards(AuthGuard)
