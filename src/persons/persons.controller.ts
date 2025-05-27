@@ -71,7 +71,7 @@ export class PersonsController {
     return this.nats.send('person.delete', { id });
   }
 
-  @Get('findBeneficiariesOfPerson/:personId')
+  @Get(':personId/beneficiaries')
   @ApiResponse({
     status: 200,
     description: 'Mostrar los beneficiarios de una persona',
