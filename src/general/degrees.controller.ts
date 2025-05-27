@@ -1,8 +1,9 @@
 import { Controller, Get, Param, Query } from '@nestjs/common';
-import { ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiExcludeController, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { NatsService, PaginationDto } from 'src/common';
 
 @ApiTags('Degree')
+@ApiExcludeController() // Todo este controlador no aparecerá en Swagger
 @Controller()
 export class DegreesController {
   constructor(private readonly nats: NatsService) {}
