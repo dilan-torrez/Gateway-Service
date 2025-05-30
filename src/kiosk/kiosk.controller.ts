@@ -8,12 +8,13 @@ import {
   Post,
   UploadedFiles,
   UseInterceptors,
+  UseGuards,
 } from '@nestjs/common';
 import { ApiBody, ApiConsumes, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { firstValueFrom } from 'rxjs';
 import { PvtEnvs } from 'src/config';
-import * as bcrypt from 'bcrypt';
 import { HttpService } from '@nestjs/axios';
+import { HashPvtGuard } from 'src/auth/guards/hashpvt.guard';
 import { Response } from 'express';
 import { SaveDataKioskAuthDto } from './dto/save-data-kiosk-auth.dto';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
@@ -79,6 +80,7 @@ export class KioskController {
     return this.nats.send('kiosk.getFingerprintComparison', id);
   }
 
+  @UseGuards(HashPvtGuard)
   @Get('person/:identityCard/ecoCom')
   @ApiResponse({
     status: 200,
@@ -87,90 +89,50 @@ export class KioskController {
   async VerifyEcoCom(
     @Headers('authorization') authorization: string,
     @Param('identityCard') identityCard: string,
-    @Res({ passthrough: true }) res: Response,
   ) {
     this.recordService.debug(`GET: person/${identityCard}/ecoCom`);
-    let hash: string;
-    if (authorization && authorization.startsWith('Bearer ')) {
-      hash = authorization.split(' ')[1];
-    }
-    // El hash2 se usa para comparar con la libreria bcrypt, es un problema de versiones con el hash nativo de laravel
-    const hash2 = hash.replace(/^\$2y(.+)$/i, '$2a$1');
     const url = `${PvtEnvs.PvtBeApiServer}/kioskoComplemento?ci=${identityCard}`;
     try {
-      if (await bcrypt.compare(PvtEnvs.PvtHashSecret, hash2)) {
         const { data } = await firstValueFrom(
-          this.httpService.get(url, { headers: { Authorization: `Bearer ${hash}` } }),
+          this.httpService.get(url, { headers: { authorization } }),
         );
         return data;
-      } else {
-        res.status(401).json({
-          error: true,
-          message: 'Token no valido',
-        });
-      }
     } catch (error) {
       return error.response.data;
     }
   }
 
+  @UseGuards(HashPvtGuard)
   @Get('ecoCom/:id')
   async GetEcoComKiosko(
     @Headers('authorization') authorization: string,
     @Param('id') id: string,
-    @Res({ passthrough: true }) res: Response,
   ) {
     this.recordService.debug(`GET: ecoCom/${id}`);
-    let hash: string;
-    if (authorization && authorization.startsWith('Bearer ')) {
-      hash = authorization.split(' ')[1];
-    }
-    // El hash2 se usa para comparar con la libreria bcrypt, es un problema de versiones con el hash nativo de laravel
-    const hash2 = hash.replace(/^\$2y(.+)$/i, '$2a$1');
     const url = `${PvtEnvs.PvtBeApiServer}/eco_com/${id}`;
     try {
-      if (await bcrypt.compare(PvtEnvs.PvtHashSecret, hash2)) {
-        const { data } = await firstValueFrom(
-          this.httpService.get(url, { headers: { Authorization: `Bearer ${hash}` } }),
-        );
-        return data;
-      } else {
-        res.status(401).json({
-          error: true,
-          message: 'Token no valido',
-        });
-      }
+      const { data } = await firstValueFrom(
+        this.httpService.get(url, { headers: { authorization } }),
+      );
+      return data;
     } catch (error) {
       return error.response.data;
     }
   }
 
+  @UseGuards(HashPvtGuard)
   @Post('ecoCom')
   async CreateEcoComKiosko(
     @Headers('authorization') authorization: string,
-    @Res({ passthrough: true }) res: Response,
     @Body() body,
   ) {
     this.recordService.debug(`POST: ecoCom`);
-    let hash: string;
-    if (authorization && authorization.startsWith('Bearer ')) {
-      hash = authorization.split(' ')[1];
-    }
-    // El hash2 se usa para comparar con la libreria bcrypt, es un problema de versiones con el hash nativo de laravel
-    const hash2 = hash.replace(/^\$2y(.+)$/i, '$2a$1');
     const url = `${PvtEnvs.PvtBeApiServer}/eco_com`;
     try {
-      if (await bcrypt.compare(PvtEnvs.PvtHashSecret, hash2)) {
-        const { data } = await firstValueFrom(
-          this.httpService.post(url, body, { headers: { Authorization: `Bearer ${hash}` } }),
-        );
-        return data;
-      } else {
-        res.status(401).json({
-          error: true,
-          message: 'Token no valido',
-        });
-      }
+      const { data } = await firstValueFrom(
+        this.httpService.post(url, body, { headers: { authorization } }),
+      );
+      return data;
     } catch (error) {
       return error.response.data;
     }
