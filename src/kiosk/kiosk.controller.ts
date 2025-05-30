@@ -91,11 +91,10 @@ export class KioskController {
     @Param('identityCard') identityCard: string,
   ) {
     this.recordService.debug(`GET: person/${identityCard}/ecoCom`);
-    const hash = authorization.split(' ')[1];
     const url = `${PvtEnvs.PvtBeApiServer}/kioskoComplemento?ci=${identityCard}`;
     try {
         const { data } = await firstValueFrom(
-          this.httpService.get(url, { headers: { Authorization: `Bearer ${hash}` } }),
+          this.httpService.get(url, { headers: { authorization } }),
         );
         return data;
     } catch (error) {
@@ -110,11 +109,10 @@ export class KioskController {
     @Param('id') id: string,
   ) {
     this.recordService.debug(`GET: ecoCom/${id}`);
-    const hash = authorization.split(' ')[1];
     const url = `${PvtEnvs.PvtBeApiServer}/eco_com/${id}`;
     try {
       const { data } = await firstValueFrom(
-        this.httpService.get(url, { headers: { Authorization: `Bearer ${hash}` } }),
+        this.httpService.get(url, { headers: { authorization } }),
       );
       return data;
     } catch (error) {
@@ -129,11 +127,10 @@ export class KioskController {
     @Body() body,
   ) {
     this.recordService.debug(`POST: ecoCom`);
-    const hash = authorization.split(' ')[1];
     const url = `${PvtEnvs.PvtBeApiServer}/eco_com`;
     try {
       const { data } = await firstValueFrom(
-        this.httpService.post(url, body, { headers: { Authorization: `Bearer ${hash}` } }),
+        this.httpService.post(url, body, { headers: { authorization } }),
       );
       return data;
     } catch (error) {
