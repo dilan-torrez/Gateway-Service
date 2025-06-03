@@ -5,6 +5,7 @@ import {
   Get,
   Param,
   ParseIntPipe,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -71,35 +72,34 @@ export class PersonsController {
     return this.nats.send('person.delete', { id });
   }
 
-  @Get('findPersonAffiliatesWithDetails/:id')
+  @Get(':uuid/details')
   @ApiResponse({
     status: 200,
-    description: 'Mostrar una persona con su relación de personAffiliate',
+    description: 'Muestra una persona con sus relaciones y características adicionales',
   })
-  async findPersonAffiliate(@Param('id') id: string) {
-    return this.nats.send('person.findPersonAffiliatesWithDetails', { id });
+  async findPerson(@Param('uuid', new ParseUUIDPipe()) uuid: string) {
+    return this.nats.send('person.findOneWithFeatures', { uuid });
+  }
+  @Get(':personId/beneficiaries')
+  @ApiResponse({
+    status: 200,
+    description: 'Mostrar los beneficiarios de una persona',
+  })
+  async findBeneficiaries(@Param('personId') id: string) {
+    return this.nats.send('person.getBeneficiariesOfAffiliate', { id });
   }
 
-  @Get('showPersonsRelatedToAffiliate/:id')
-  @ApiResponse({
-    status: 200,
-    description: 'Mostrar listado de personas relacionadas a un afiliado',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'Person with the specified ID not found',
-  })
   async showPersonsRelatedToAffiliate(@Param('id') id: string) {
     return this.nats.send('person.showPersonsRelatedToAffiliate', { id });
   }
 
-  @Get('findAffiliteRelatedWithPerson/:id')
+  @Get(':personId/affiliates')
   @ApiResponse({
     status: 200,
-    description: 'Mostrar una persona con su relación de personAffiliate',
+    description: 'Mostrar los afiliados relacionados con una persona',
   })
-  async findAffiliteRelatedWithPerson(@Param('id') id: string) {
-    return this.nats.send('person.findAffiliteRelatedWithPerson', { id });
+  async findAffiliteRelatedWithPerson(@Param('personId') id: string) {
+    return this.nats.send('person.findAffiliates', { id });
   }
 
   @UseGuards(AuthGuard)
