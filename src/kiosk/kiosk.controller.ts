@@ -93,10 +93,10 @@ export class KioskController {
     this.recordService.debug(`GET: person/${identityCard}/ecoCom`);
     const url = `${PvtEnvs.PvtBeApiServer}/kioskoComplemento?ci=${identityCard}`;
     try {
-        const { data } = await firstValueFrom(
-          this.httpService.get(url, { headers: { authorization } }),
-        );
-        return data;
+      const { data } = await firstValueFrom(
+        this.httpService.get(url, { headers: { authorization } }),
+      );
+      return data;
     } catch (error) {
       return error.response.data;
     }
@@ -104,10 +104,7 @@ export class KioskController {
 
   @UseGuards(HashPvtGuard)
   @Get('ecoCom/:id')
-  async GetEcoComKiosko(
-    @Headers('authorization') authorization: string,
-    @Param('id') id: string,
-  ) {
+  async GetEcoComKiosko(@Headers('authorization') authorization: string, @Param('id') id: string) {
     this.recordService.debug(`GET: ecoCom/${id}`);
     const url = `${PvtEnvs.PvtBeApiServer}/eco_com/${id}`;
     try {
@@ -122,10 +119,7 @@ export class KioskController {
 
   @UseGuards(HashPvtGuard)
   @Post('ecoCom')
-  async CreateEcoComKiosko(
-    @Headers('authorization') authorization: string,
-    @Body() body,
-  ) {
+  async CreateEcoComKiosko(@Headers('authorization') authorization: string, @Body() body) {
     this.recordService.debug(`POST: ecoCom`);
     const url = `${PvtEnvs.PvtBeApiServer}/eco_com`;
     try {
@@ -153,7 +147,11 @@ export class KioskController {
       const { data } = await firstValueFrom(this.httpService.get(ecoComUrl));
       ecoComResponse = data;
     } catch (error) {
-      this.recordService.warn({ url: ecoComUrl , message: error.message, response: error.response?.data?.message});
+      this.recordService.warn({
+        url: ecoComUrl,
+        message: error.message,
+        response: error.response?.data?.message,
+      });
       ecoComResponse = {
         error: error.response?.data?.error,
         canCreate: error.response?.data?.canCreate,
@@ -165,7 +163,11 @@ export class KioskController {
       const { data } = await firstValueFrom(this.httpService.get(loansUrl));
       loansResponse = data;
     } catch (error) {
-      this.recordService.warn({ url: loansUrl , message: error.message, response: error.response?.data?.message});
+      this.recordService.warn({
+        url: loansUrl,
+        message: error.message,
+        response: error.response?.data?.message,
+      });
       loansResponse = {
         error: true,
         message: error.response?.data?.message || 'Error al obtener préstamos',
