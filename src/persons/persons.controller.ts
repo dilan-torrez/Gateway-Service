@@ -20,7 +20,7 @@ import {
 } from './dto';
 import { ApiTags, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { AuthGuard } from 'src/auth/guards/auth.guard';
-import { NatsService, RecordService } from 'src/common';
+import { NatsService, RecordService, FtpService } from 'src/common';
 
 @ApiTags('persons')
 @Controller('persons')
@@ -28,6 +28,7 @@ export class PersonsController {
   constructor(
     private readonly nats: NatsService,
     private readonly recordService: RecordService,
+    private readonly ftp: FtpService,
   ) {}
 
   @Get('showListFingerprint')
@@ -103,7 +104,7 @@ export class PersonsController {
   }
 
   @UseGuards(AuthGuard)
-  @Post('createPersonFingerprint')
+  @Post(':personId/createPersonFingerprint')
   @ApiBody({ type: CreatePersonFingerprintDto }) // Esto especifica que el cuerpo de la solicitud debe ser del tipo CreatePersonFingerprintDto
   @ApiResponse({
     status: 200,
@@ -123,21 +124,33 @@ export class PersonsController {
   })
   async createPersonFingerprint(
     @Req() req: any,
-    @Body()
-    createPersonFingerprintDto: CreatePersonFingerprintDto,
+    @Param('personId', ParseIntPipe) personId: string,
+    @Body() body: { personFingerprints: any[]; wsqFingerprints: any[] },
+    //createPersonFingerprintDto: CreatePersonFingerprintDto,
   ) {
-    const result = await this.nats.send(
+    const { messages, registros, uploadFiles, removeFiles } = await this.nats.firstValue(
       'person.createPersonFingerprint',
-      createPersonFingerprintDto,
+      {
+        personId,
+        personFingerprints: body.personFingerprints,
+        wsqFingerprints: body.wsqFingerprints,
+      },
     );
+    await this.ftp.removeFile(removeFiles);
+    await this.ftp.uploadFile(body.wsqFingerprints, uploadFiles, 'true');
+
     this.recordService.http(
-      `Registro de huella [${createPersonFingerprintDto.fingerprints.map((e) => e.fingerprintTypeId)}]`,
+      `Registro de huellas digitales de la persona [${personId}]`,
       req.user,
       2,
-      createPersonFingerprintDto.personId,
+      +personId,
       'Person',
     );
-    return result;
+
+    return {
+      messages,
+      registros,
+    };
   }
 
   @Get('showPersonFingerprint/:id')

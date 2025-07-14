@@ -3,11 +3,22 @@ import { AppModule } from './app.module';
 import { FrontEnvs, PortEnvs } from './config';
 import { Logger, ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { NastEnvs } from './config';
+import { MicroserviceOptions, Transport } from '@nestjs/microservices';
 
 async function bootstrap() {
   const logger = new Logger('Microservice-Gateway');
 
   const app = await NestFactory.create(AppModule);
+
+  const microservice = await NestFactory.createMicroservice<MicroserviceOptions>(AppModule, {
+    transport: Transport.NATS,
+    options: {
+      servers: NastEnvs.natsServers,
+    },
+  });
+
+  await microservice.listen();
 
   app.setGlobalPrefix('api');
   app.enableCors({
