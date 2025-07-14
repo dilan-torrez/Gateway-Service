@@ -17,6 +17,16 @@ interface EnvVars {
   DB_HOST: string;
   DB_PORT: number;
   DB_USERNAME: string;
+
+  FTP_HOST: string;
+  FTP_USERNAME: string;
+  FTP_PASSWORD: string;
+  FTP_ROOT: string;
+  FTP_SSL: boolean;
+  FTP_FINGERPRINTS: string;
+  FTP_DOCUMENTS: string;
+  FTP_FILE_DOSSIERS: string;
+  FTP_IMPORT_DOCUMENTS_PVTBE: string;
 }
 
 const envsSchema = joi
@@ -25,6 +35,12 @@ const envsSchema = joi
 
     NATS_SERVERS: joi.array().items(joi.string()).required(),
     FRONTENDS_SERVERS: joi.array().items(joi.string()).required(),
+
+    FTP_HOST: joi.string(),
+    FTP_USERNAME: joi.string(),
+    FTP_PASSWORD: joi.string(),
+    FTP_ROOT: joi.string(),
+    FTP_SSL: joi.boolean(),
 
     PVT_API_SERVER: joi.string(),
     PVT_HASH_SECRET: joi.string(),
@@ -73,4 +89,16 @@ export const PvtEnvs = {
   PvtBeApiServer: envVars.PVT_BE_API_SERVER + '/api/v1',
   PvtBackendApiServer: envVars.PVT_BACKEND_API_SERVER + '/api',
   PvtHashSecret: envVars.PVT_HASH_SECRET,
+};
+
+export const envsFtp = {
+  ftpHost: envVars.FTP_HOST,
+  ftpUsername: envVars.FTP_USERNAME,
+  ftpPassword: envVars.FTP_PASSWORD,
+  ftpRoot: envVars.FTP_ROOT,
+  ftpSsl: envVars.FTP_SSL,
+  ftpFingerprints: envVars.FTP_FINGERPRINTS,
+  ftpDocuments: envVars.FTP_DOCUMENTS,
+  ftpFileDossiers: envVars.FTP_FILE_DOSSIERS,
+  ftpImportDocumentsPvtbe: envVars.FTP_IMPORT_DOCUMENTS_PVTBE,
 };
