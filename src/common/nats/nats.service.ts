@@ -21,15 +21,6 @@ export class NatsService {
   }
 
   async firstValue(service: string, data: any): Promise<any> {
-    return firstValueFrom(
-      this.client.send(service, data).pipe(
-        catchError((err) => {
-          if (!err || Object.keys(err).length === 0) {
-            throw new HttpException('Microservice Unavailable', 503);
-          }
-          throw new HttpException(err, err.statusCode);
-        }),
-      ),
-    );
+    return firstValueFrom(await this.send(service, data));
   }
 }

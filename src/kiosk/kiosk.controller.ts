@@ -4,7 +4,6 @@ import {
   Get,
   Param,
   Headers,
-  Res,
   Post,
   UploadedFiles,
   UseInterceptors,
@@ -15,11 +14,10 @@ import { firstValueFrom } from 'rxjs';
 import { PvtEnvs } from 'src/config';
 import { HttpService } from '@nestjs/axios';
 import { HashPvtGuard } from 'src/auth/guards/hashpvt.guard';
-import { Response } from 'express';
 import { SaveDataKioskAuthDto } from './dto/save-data-kiosk-auth.dto';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { UploadPhotosDto } from './dto/save-photos.dto';
-import { NatsService, RecordService } from 'src/common';
+import { NatsService, RecordService, FtpService } from 'src/common';
 
 @Controller('kiosk')
 @ApiTags('kiosk')
@@ -28,6 +26,7 @@ export class KioskController {
     private readonly nats: NatsService,
     private readonly httpService: HttpService,
     private readonly recordService: RecordService,
+    private readonly ftp: FtpService,
   ) {}
 
   @Get('person/:identityCard')
@@ -61,13 +60,35 @@ export class KioskController {
     files: { photoIdentityCard?: Express.Multer.File[]; photoFace?: Express.Multer.File[] },
     @Body() body: UploadPhotosDto,
   ) {
-    this.recordService.debug(`POST: savePhoto`);
-    const payload = {
+    const hasCI = !!(files?.photoIdentityCard && files.photoIdentityCard.length > 0);
+    const hasFace = !!(files?.photoFace && files.photoFace.length > 0);
+
+    const photos = await this.nats.firstValue('kiosk.savePhotos', {
       personId: body.personId,
-      photoIdentityCard: files.photoIdentityCard?.[0]?.buffer,
-      photoFace: files.photoFace?.[0]?.buffer,
+      hasCI,
+      hasFace,
+    });
+    const filesConverted = [];
+
+    if (hasCI) {
+      filesConverted.push({
+        fieldname: `file[ci]`,
+        buffer: files.photoIdentityCard[0]?.buffer,
+      });
+    }
+
+    if (hasFace) {
+      filesConverted.push({
+        fieldname: `file[face]`,
+        buffer: files.photoFace[0]?.buffer,
+      });
+    }
+
+    await this.ftp.uploadFile(filesConverted, photos);
+
+    return {
+      message: 'Fotos guardadas exitosamente',
     };
-    return this.nats.send('kiosk.savePhotos', payload);
   }
 
   @Get('getFingerprintComparison/:id')
@@ -77,7 +98,8 @@ export class KioskController {
   })
   async getFingerprintComparison(@Param('id') id: number) {
     this.recordService.debug(`GET: getFingerprintComparison/${id}`);
-    return this.nats.send('kiosk.getFingerprintComparison', id);
+    const { data } = await this.nats.firstValue('kiosk.getFingerprintComparison', id);
+    return await this.ftp.downloadFile(data, 'true');
   }
 
   @UseGuards(HashPvtGuard)
@@ -93,10 +115,10 @@ export class KioskController {
     this.recordService.debug(`GET: person/${identityCard}/ecoCom`);
     const url = `${PvtEnvs.PvtBeApiServer}/kioskoComplemento?ci=${identityCard}`;
     try {
-        const { data } = await firstValueFrom(
-          this.httpService.get(url, { headers: { authorization } }),
-        );
-        return data;
+      const { data } = await firstValueFrom(
+        this.httpService.get(url, { headers: { authorization } }),
+      );
+      return data;
     } catch (error) {
       return error.response.data;
     }
@@ -104,10 +126,7 @@ export class KioskController {
 
   @UseGuards(HashPvtGuard)
   @Get('ecoCom/:id')
-  async GetEcoComKiosko(
-    @Headers('authorization') authorization: string,
-    @Param('id') id: string,
-  ) {
+  async GetEcoComKiosko(@Headers('authorization') authorization: string, @Param('id') id: string) {
     this.recordService.debug(`GET: ecoCom/${id}`);
     const url = `${PvtEnvs.PvtBeApiServer}/eco_com/${id}`;
     try {
@@ -122,10 +141,7 @@ export class KioskController {
 
   @UseGuards(HashPvtGuard)
   @Post('ecoCom')
-  async CreateEcoComKiosko(
-    @Headers('authorization') authorization: string,
-    @Body() body,
-  ) {
+  async CreateEcoComKiosko(@Headers('authorization') authorization: string, @Body() body) {
     this.recordService.debug(`POST: ecoCom`);
     const url = `${PvtEnvs.PvtBeApiServer}/eco_com`;
     try {
@@ -153,7 +169,11 @@ export class KioskController {
       const { data } = await firstValueFrom(this.httpService.get(ecoComUrl));
       ecoComResponse = data;
     } catch (error) {
-      this.recordService.warn({ url: ecoComUrl , message: error.message, response: error.response?.data?.message});
+      this.recordService.warn({
+        url: ecoComUrl,
+        message: error.message,
+        response: error.response?.data?.message,
+      });
       ecoComResponse = {
         error: error.response?.data?.error,
         canCreate: error.response?.data?.canCreate,
@@ -165,7 +185,11 @@ export class KioskController {
       const { data } = await firstValueFrom(this.httpService.get(loansUrl));
       loansResponse = data;
     } catch (error) {
-      this.recordService.warn({ url: loansUrl , message: error.message, response: error.response?.data?.message});
+      this.recordService.warn({
+        url: loansUrl,
+        message: error.message,
+        response: error.response?.data?.message,
+      });
       loansResponse = {
         error: true,
         message: error.response?.data?.message || 'Error al obtener préstamos',

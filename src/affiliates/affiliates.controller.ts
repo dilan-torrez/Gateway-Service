@@ -3,14 +3,15 @@ import {
   Get,
   Param,
   Post,
-  UploadedFile,
+  Delete,
+  UploadedFiles,
   UseInterceptors,
   Res,
   Req,
   UseGuards,
   Body,
+  BadRequestException,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
 import {
   ApiBody,
   ApiConsumes,
@@ -19,16 +20,31 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { FileRequiredPipe, NatsService, RecordService } from 'src/common';
+import { NatsService, RecordService, FtpService } from 'src/common';
 import { Response } from 'express';
 import { AuthGuard } from 'src/auth/guards/auth.guard';
+import { AnyFilesInterceptor } from '@nestjs/platform-express';
+
 @ApiTags('affiliates')
 @Controller('affiliates')
 export class AffiliatesController {
   constructor(
     private readonly nats: NatsService,
     private readonly recordService: RecordService,
+    private readonly ftp: FtpService,
   ) {}
+
+  @Get('fileDossiers')
+  @ApiResponse({ status: 200, description: 'Obtener todos los tipos de expedients' })
+  async findAllFileDossiers() {
+    return this.nats.send('affiliate.findAllFileDossiers', []);
+  }
+
+  @Get('documents')
+  @ApiResponse({ status: 200, description: 'Obtener todos los tipos de documentos' })
+  async findAllDocuments() {
+    return this.nats.send('affiliate.findAllDocuments', []);
+  }
 
   @Get(':affiliateId')
   @ApiResponse({ status: 200, description: 'Mostrar datos del afiliado' })
@@ -48,7 +64,6 @@ export class AffiliatesController {
   @ApiParam({
     name: 'procedureDocumentId',
     description: 'ID del del documento',
-    type: Number,
     example: 456,
   })
   @ApiConsumes('multipart/form-data')
@@ -68,13 +83,34 @@ export class AffiliatesController {
     },
   })
   @UseGuards(AuthGuard)
-  @UseInterceptors(FileInterceptor('documentPdf'))
+  @UseInterceptors(AnyFilesInterceptor())
+  //@UseInterceptors(FileInterceptor('documentPdf'))
   async createOrUpdateDocument(
     @Req() req: any,
     @Param('affiliateId') affiliateId: string,
     @Param('procedureDocumentId') procedureDocumentId: string,
-    @UploadedFile(new FileRequiredPipe()) documentPdf: Express.Multer.File,
+    @UploadedFiles() files: Express.Multer.File[],
   ) {
+    if (!files || files.length === 0) {
+      throw new BadRequestException('Debe subir al menos un archivo PDF');
+    }
+
+    files.forEach((file) => {
+      if (file.mimetype !== 'application/pdf') {
+        throw new BadRequestException('Todos los archivos deben ser PDF');
+      }
+    });
+
+    const { serviceStatus, message, affiliateDocuments } = await this.nats.firstValue(
+      'affiliate.createOrUpdateDocument',
+      {
+        affiliateId,
+        procedureDocumentId,
+      },
+    );
+
+    await this.ftp.uploadFile(files, affiliateDocuments);
+
     this.recordService.http(
       `Registro de documento [${procedureDocumentId}]`,
       req.user,
@@ -82,17 +118,111 @@ export class AffiliatesController {
       +affiliateId,
       'Affiliate',
     );
-    return this.nats.send('affiliate.createOrUpdateDocument', {
-      affiliateId,
-      procedureDocumentId,
-      documentPdf,
-    });
+
+    return {
+      serviceStatus,
+      message,
+    };
   }
 
   @Get(':affiliateId/documents')
   @ApiResponse({ status: 200, description: 'Mostrar Documentos del Afiliado' })
   async showDocuments(@Param('affiliateId') affiliateId: string) {
     return this.nats.send('affiliate.showDocuments', { affiliateId });
+  }
+
+  @Get(':affiliateId/showFileDossiers')
+  @ApiResponse({ status: 200, description: 'Mostrar Expedientes del Afiliado' })
+  async showFileDossiers(@Param('affiliateId') affiliateId: string) {
+    return this.nats.send('affiliate.showFileDossiers', { affiliateId });
+  }
+
+  @Post(':affiliateId/fileDossier/:fileDossierId/createOrUpdateFileDossier')
+  @ApiOperation({
+    summary: 'Unir chunks y subir expediente del afiliado al FTP',
+    description: `Este endpoint concatena los chunks previamente subidos al servidor temporal
+  y genera el archivo final del expediente. Luego, el archivo se sube al FTP en la ruta correspondiente.`,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'El expediente fue concatenado y subido exitosamente al FTP.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'No se encontraron todos los chunks necesarios para unir el expediente.',
+  })
+  @ApiResponse({
+    status: 500,
+    description: 'Error interno del servidor durante la unión o subida del expediente.',
+  })
+  @ApiParam({
+    name: 'affiliateId',
+    description: 'ID del afiliado',
+    type: Number,
+    example: 123,
+  })
+  @ApiParam({
+    name: 'fileDossierId',
+    description: 'ID del expediente',
+    type: Number,
+    example: 456,
+  })
+  @ApiParam({
+    name: 'totalChunks',
+    description: 'Cantidad total de chunks que componen el archivo',
+    type: Number,
+    example: 5,
+  })
+  @UseGuards(AuthGuard)
+  async createOrUpdateFileDossier(
+    @Req() req: any,
+    @Param('affiliateId') affiliateId: string,
+    @Param('fileDossierId') fileDossierId: string,
+    @Body() body: any,
+  ) {
+    const { initialName, totalChunks } = body;
+    const { serviceStatus, message, affiliateFileDossiers } = await this.nats.firstValue(
+      'affiliate.createOrUpdateFileDossier',
+      {
+        affiliateId,
+        fileDossierId,
+      },
+    );
+
+    const fileDossiers = await this.ftp.concatChunks(+fileDossierId, initialName, +totalChunks);
+    await this.ftp.uploadFile(fileDossiers, affiliateFileDossiers);
+
+    this.recordService.http(
+      `Unión de chunks y subida de expediente [${fileDossierId}]`,
+      req.user,
+      2,
+      +affiliateId,
+      'Affiliate',
+    );
+    return {
+      serviceStatus,
+      message,
+    };
+  }
+
+  @Get(':affiliateId/fileDossiers/:fileDossierId')
+  @ApiResponse({ status: 200, description: 'Buscar el expediente del Afiliado' })
+  async findFileDossier(
+    @Param('affiliateId') affiliateId: string,
+    @Param('fileDossierId') fileDossierId: string,
+    @Res() res: Response,
+  ) {
+    const path = await this.nats.firstValue('affiliate.findFileDossier', {
+      affiliateId,
+      fileDossierId,
+    });
+    const fileDossiers = await this.ftp.downloadFile(path);
+
+    res.set({
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="${affiliateId}${fileDossierId}.pdf"`,
+    });
+    res.send(fileDossiers[0].pdfBuffer);
   }
 
   @Get(':affiliateId/documents/:procedureDocumentId')
@@ -102,17 +232,35 @@ export class AffiliatesController {
     @Param('procedureDocumentId') procedureDocumentId: string,
     @Res() res: Response,
   ) {
-    const documentPdf = await this.nats.firstValue('affiliate.findDocument', {
+    const affiliateDocuments = await this.nats.firstValue('affiliate.findDocument', {
       affiliateId,
       procedureDocumentId,
     });
 
+    const documentPdf = await this.ftp.downloadFile(affiliateDocuments);
     res.set({
       'Content-Type': 'application/pdf',
       'Content-Disposition': `attachment; filename="${affiliateId}${procedureDocumentId}.pdf"`,
     });
 
-    res.send(Buffer.from(documentPdf, 'base64'));
+    res.send(documentPdf[0].pdfBuffer);
+  }
+
+  @Delete(':affiliateId/fileDossiers/:fileDossierId')
+  @ApiResponse({ status: 200, description: 'Eliminar el expediente del Afiliado' })
+  async deleteFileDossier(
+    @Param('affiliateId') affiliateId: string,
+    @Param('fileDossierId') fileDossierId: string,
+  ) {
+    const { paths, message } = await this.nats.firstValue('affiliate.deleteFileDossier', {
+      affiliateId,
+      fileDossierId,
+    });
+    await this.ftp.removeFile(paths);
+    return {
+      message: message,
+      serviceStatus: true,
+    };
   }
 
   @UseGuards(AuthGuard)

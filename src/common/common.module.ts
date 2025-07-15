@@ -1,11 +1,14 @@
 import { Global, Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { NATS_SERVICE, NastEnvs } from 'src/config';
-import { NatsService, RecordService } from './';
+import { NatsService, RecordService, FtpService } from './';
 import { auditLogger } from 'src/config/winston-audit-logger';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
+import { CommonController } from './common.controller';
+
 @Global()
 @Module({
+  controllers: [CommonController],
   imports: [
     ClientsModule.register([
       {
@@ -20,6 +23,7 @@ import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
   providers: [
     NatsService,
     RecordService,
+    FtpService,
     { provide: WINSTON_MODULE_PROVIDER, useValue: auditLogger },
   ],
   exports: [
@@ -34,6 +38,7 @@ import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
     ]),
     NatsService,
     RecordService,
+    FtpService,
   ],
 })
 export class CommonModule {}
