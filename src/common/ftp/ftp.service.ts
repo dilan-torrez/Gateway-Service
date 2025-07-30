@@ -100,8 +100,6 @@ export class FtpService {
       const tempDir = '/tmp';
       const buffers: Buffer[] = [];
 
-      console.log(fieldname, nameInitial, totalChunks);
-
       for (let i = 0; i < totalChunks; i++) {
         const chunkPath = servicePath.join(tempDir, `${nameInitial}-${i}`);
         if (!fs.existsSync(chunkPath)) {
@@ -109,6 +107,7 @@ export class FtpService {
           throw new Error(`Chunk ${chunkPath} not found`);
         }
         buffers.push(fs.readFileSync(chunkPath));
+        fs.unlinkSync(chunkPath);
       }
       const fileBuffer = Buffer.concat(buffers);
 
