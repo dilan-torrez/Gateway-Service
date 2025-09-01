@@ -23,4 +23,14 @@ export class NatsService {
   async firstValue(service: string, data: any): Promise<any> {
     return firstValueFrom(await this.send(service, data));
   }
+
+  async emit(service: string, data: any): Promise<void> {
+    try {
+      this.client.emit(service, data);
+      this.logger.log(`Event emitted to [${service}] with data: ${JSON.stringify(data)}`);
+    } catch (error) {
+      this.logger.error(`Failed to emit event to [${service}]`, error.stack);
+      throw new HttpException('Event emit failed', 500);
+    }
+  }
 }
