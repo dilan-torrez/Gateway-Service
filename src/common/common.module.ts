@@ -32,20 +32,3 @@ import { HttpModule } from '@nestjs/axios';
   exports: [ClientsModule, NatsService, RecordService, FtpService, SmsService, HttpModule],
 })
 export class CommonModule {}
-
-
-    const apiToken = authHeader.split(' ')[1];
-
-    const response = await this.nats.firstValue('auth.verifyApiTokenAppMobile', { apiToken });
-
-    const { error, message } = response;
-
-    if (error) {
-      throw new UnauthorizedException({ error: true, message: 'Sin autorización, ' + message });
-    }
-    const user = {
-      affiliateId: response.affiliateId,
-      tokenId: response.tokenId,
-    };
-
-    request.user = user;
