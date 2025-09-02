@@ -11,9 +11,7 @@ import { NatsService } from 'src/common';
 @Injectable()
 export class AuthAppMobileGuard implements CanActivate {
   private readonly logger = new Logger('AuthAppMobileGuard');
-  constructor(
-    private nats: NatsService,
-  ) {}
+  constructor(private nats: NatsService) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const request = context.switchToHttp().getRequest();
