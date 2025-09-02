@@ -30,6 +30,11 @@ export class AppMobileController {
   @ApiResponse({ status: 200, description: 'Obtener todos los préstamos' })
   @UseGuards(AuthAppMobileGuard)
   async informationLoan(@Param('affiliateId') affiliateId: string) {
+    this.nats.emit('appMobile.record.create', {
+      action: 'informationLoan',
+      description: 'Obtener todos los préstamos',
+      metadata: { affiliateId },
+    });
     return await this.nats.firstValue('appMobile.loans.informationLoan', { affiliateId });
   }
 
@@ -48,6 +53,11 @@ export class AppMobileController {
       'Content-Type': 'application/pdf',
       'Content-Disposition': `inline; filename="${response.name}"`,
       'Content-Length': pdfBuffer.length,
+    });
+    this.nats.emit('appMobile.record.create', {
+      action: 'loanPrintPlan',
+      description: 'Imprimir plan de préstamo',
+      metadata: { loanId },
     });
     return res.send(pdfBuffer);
   }
@@ -74,15 +84,7 @@ export class AppMobileController {
   @Get('contributionsAll/:affiliateId')
   @ApiResponse({ status: 200, description: 'Obtener todas las contribuciones' })
   @UseGuards(AuthAppMobileGuard)
-  async allContributions(
-    @Param('affiliateId') affiliateId: string,
-    @Req() req: any
-  ) {
-    this.nats.emit('appMobile.record.create', { 
-        action: 'allContributions',
-        description: 'Obtener todas las contribuciones',
-        metadata: { affiliateId }
-    });
+  async allContributions(@Param('affiliateId') affiliateId: string) {
     return await this.nats.firstValue('appMobile.contributions.allContributions', { affiliateId });
   }
 
@@ -163,6 +165,11 @@ export class AppMobileController {
   @ApiResponse({ status: 200, description: 'Obtener liveness del afiliado de complemento' })
   @UseGuards(AuthAppMobileGuard)
   async ecoComLiveness(@Headers('authorization') authorization: string) {
+    this.nats.emit('appMobile.record.create', {
+      action: 'ecoComLiveness',
+      description: 'Obtener liveness del afiliado de complemento',
+      metadata: {},
+    });
     return await this.nats.firstValue('appMobile.ecoComLiveness', { authorization });
   }
 
@@ -171,6 +178,11 @@ export class AppMobileController {
   @UseGuards(AuthAppMobileGuard)
   async ecoComLivenessShow(@Headers('authorization') authorization: string, @Req() req: any) {
     const { affiliateId } = req.user;
+    this.nats.emit('appMobile.record.create', {
+      action: 'ecoComLivenessShow',
+      description: 'Mostrar liveness del afiliado de complemento',
+      metadata: { affiliateId },
+    });
     return await this.nats.firstValue('appMobile.ecoComLivenessShow', {
       authorization,
       affiliateId,
@@ -191,6 +203,11 @@ export class AppMobileController {
   })
   @UseGuards(AuthAppMobileGuard)
   async ecoComLivenessStore(@Headers('authorization') authorization: string, @Body() data: any) {
+    this.nats.emit('appMobile.record.create', {
+      action: 'ecoComLivenessStore',
+      description: 'Guardar liveness del afiliado de complemento',
+      metadata: { device_id: data.device_id, firebase_token: data.firebase_token },
+    });
     return await this.nats.firstValue('appMobile.ecoComLivenessStore', { authorization, data });
   }
 
@@ -271,7 +288,6 @@ export class AppMobileController {
     @Body() data: any,
     @Res() res: Response,
   ) {
-
     const response = await this.nats.firstValue('appMobile.ecoComEconomicComplementsStore', {
       authorization,
       data,
@@ -285,6 +301,14 @@ export class AppMobileController {
       'Content-Type': 'application/pdf',
       'Content-Disposition': `attachment; filename="${response.name}"`,
       'Content-Length': pdfBuffer.length,
+    });
+    this.nats.emit('appMobile.record.create', {
+      action: 'ecoComEconomicComplementsStore',
+      description: 'Guardar complemento económico',
+      metadata: {
+        eco_com_procedure_id: data.eco_com_procedure_id,
+        cell_phone_number: data.cell_phone_number,
+      },
     });
     return res.send(pdfBuffer);
   }
@@ -322,6 +346,11 @@ export class AppMobileController {
     @Headers('authorization') authorization: string,
     @Param('ecoComProcedureId') ecoComProcedureId: string,
   ) {
+    this.nats.emit('appMobile.record.create', {
+      action: 'ecoComProcedure',
+      description: 'Obtener procedimiento del afiliado de complemento',
+      metadata: { ecoComProcedureId },
+    });
     return await this.nats.firstValue('appMobile.ecoComProcedure', {
       authorization,
       ecoComProcedureId,
@@ -348,7 +377,16 @@ export class AppMobileController {
     },
   })
   @UseGuards(AuthAppMobileGuard)
-  async ecoComSaveIdentity(@Headers('authorization') authorization: string, @Body() data: any) {
+  async ecoComSaveIdentity(
+    @Headers('authorization') authorization: string,
+    @Body() data: any,
+    @Req() req: any,
+  ) {
+    this.nats.emit('appMobile.record.create', {
+      action: 'ecoComSaveIdentity',
+      description: 'Guardar identidad del afiliado de complemento',
+      metadata: req.user,
+    });
     return await this.nats.firstValue('pvtBe.ecoComSaveIdentity', { authorization, data });
   }
 }

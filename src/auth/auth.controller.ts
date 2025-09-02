@@ -4,7 +4,6 @@ import { Response } from 'express';
 import { NatsService, RecordService } from 'src/common';
 import { CurrentUser } from './interfaces/current-user.interface';
 import { ApiBody, ApiTags, ApiResponse, ApiOperation } from '@nestjs/swagger';
-import { FtpService } from 'src/common';
 import { AuthAppMobileGuard } from 'src/auth/guards';
 
 @ApiTags('authentications')
@@ -14,7 +13,6 @@ export class AuthController {
   constructor(
     private readonly nats: NatsService,
     private readonly recordService: RecordService,
-    private readonly ftp: FtpService,
   ) {}
 
   @ApiOperation({ summary: 'Auth Web' })
@@ -64,7 +62,7 @@ export class AuthController {
   }
 
   @ApiOperation({ summary: 'Auth AppMobile' })
-  @ApiResponse({ status: 200, description: 'Enviar SMS' })
+  @ApiResponse({ status: 200, description: 'Login AppMobile' })
   @ApiBody({
     schema: {
       type: 'object',
@@ -80,6 +78,16 @@ export class AuthController {
   })
   @Post('loginAppMobile')
   async loginAppMobile(@Body() body: any) {
+    this.nats.emit('appMobile.record.create', {
+      action: 'loginAppMobile',
+      description: 'Inicio de sesión en App Móvil',
+      metadata: {
+        username: body.username,
+        cellphone: body.cellphone,
+        isBiometric: body.isBiometric,
+        isRegisterCellphone: body.isRegisterCellphone,
+      },
+    });
     return await this.nats.firstValue('auth.loginAppMobile', body);
   }
 
@@ -96,6 +104,11 @@ export class AuthController {
   })
   @Post('verifyPin')
   async verifyPin(@Body() body: any) {
+    this.nats.emit('appMobile.record.create', {
+      action: 'verifyPin',
+      description: 'verificación de PIN para autenticación en App Móvil',
+      metadata: body,
+    });
     return await this.nats.firstValue('auth.verifyPin', body);
   }
 
@@ -104,6 +117,11 @@ export class AuthController {
   @Delete('logoutAppMobile')
   @UseGuards(AuthAppMobileGuard)
   async logoutAppMobile(@Req() req: any) {
+    this.nats.emit('appMobile.record.create', {
+      action: 'logoutAppMobile',
+      description: 'Cierre de sesión en App Móvil',
+      metadata: req.user,
+    });
     return await this.nats.firstValue('auth.logoutAppMobile', req.user);
   }
 }
