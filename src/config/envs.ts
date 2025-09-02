@@ -24,6 +24,10 @@ interface EnvVars {
   FTP_ROOT: string;
   FTP_SSL: boolean;
 
+  SMS_SERVER_URL: string;
+  SMS_SERVER_ROOT: string;
+  SMS_SERVER_PASSWORD: string;
+  SMS_PROVIDER: string;
 }
 
 const envsSchema = joi
@@ -38,6 +42,11 @@ const envsSchema = joi
     FTP_PASSWORD: joi.string(),
     FTP_ROOT: joi.string(),
     FTP_SSL: joi.boolean(),
+
+    SMS_SERVER_URL: joi.string(),
+    SMS_SERVER_ROOT: joi.string(),
+    SMS_SERVER_PASSWORD: joi.string(),
+    SMS_PROVIDER: joi.string(),
 
     PVT_API_SERVER: joi.string(),
     PVT_HASH_SECRET: joi.string(),
@@ -94,4 +103,11 @@ export const envsFtp = {
   ftpPassword: envVars.FTP_PASSWORD,
   ftpRoot: envVars.FTP_ROOT,
   ftpSsl: envVars.FTP_SSL,
+};
+
+export const smsEnvs = {
+  smsServerUrl: envVars.SMS_SERVER_URL,
+  smsServerRoot: envVars.SMS_SERVER_ROOT,
+  smsServerPassword: envVars.SMS_SERVER_PASSWORD,
+  smsProvider: envVars.SMS_PROVIDER,
 };

@@ -1,23 +1,16 @@
 import {
   Body,
   Controller,
-  Delete,
   Get,
   Param,
   ParseIntPipe,
   ParseUUIDPipe,
-  Patch,
   Post,
   Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
-import {
-  CreatePersonDto,
-  UpdatePersonDto,
-  CreatePersonFingerprintDto,
-  FilteredPaginationDto,
-} from './dto';
+import { CreatePersonFingerprintDto, FilteredPaginationDto } from './dto';
 import { ApiTags, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { AuthGuard } from 'src/auth/guards/auth.guard';
 import { NatsService, RecordService, FtpService } from 'src/common';
@@ -50,27 +43,6 @@ export class PersonsController {
   @ApiResponse({ status: 200, description: 'Mostrar una persona' })
   async findOnePersons(@Param('term') term: string) {
     return this.nats.send('person.findOne', { term, field: 'id' });
-  }
-
-  @Post()
-  @ApiResponse({ status: 200, description: 'Añadir una persona' })
-  createProduct(@Body() createPersonDto: CreatePersonDto) {
-    return this.nats.send('person.create', createPersonDto);
-  }
-
-  @Patch(':id')
-  @ApiResponse({ status: 200, description: 'Editar una persona' })
-  patchProduct(@Param('id', ParseIntPipe) id: number, @Body() updatePersonDto: UpdatePersonDto) {
-    return this.nats.send('person.update', {
-      id,
-      ...updatePersonDto,
-    });
-  }
-
-  @Delete(':id')
-  @ApiResponse({ status: 200, description: 'Eliminar una persona' })
-  deleteProduct(@Param('id') id: string) {
-    return this.nats.send('person.delete', { id });
   }
 
   @Get(':uuid/details')

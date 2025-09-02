@@ -5,6 +5,7 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { NastEnvs } from './config';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import * as bodyParser from 'body-parser';
 
 async function bootstrap() {
   const logger = new Logger('Microservice-Gateway');
@@ -33,7 +34,8 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
-
+  app.use(bodyParser.json({ limit: '50mb' }));
+  app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
   logger.log(`Gateway running on port ${PortEnvs.port}`);
 
   //Configuración swagger (Documentación de las APIS)

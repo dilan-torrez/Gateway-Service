@@ -1,11 +1,12 @@
-import { Body, Controller, Get, Logger, Post, Res } from '@nestjs/common';
+import { Body, Controller, Get, Logger, Post, Res, UseGuards, Req, Delete } from '@nestjs/common';
 import { LoginUserDto } from './dto';
 import { Response } from 'express';
 import { NatsService, RecordService } from 'src/common';
 import { CurrentUser } from './interfaces/current-user.interface';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiTags, ApiResponse, ApiOperation } from '@nestjs/swagger';
+import { AuthAppMobileGuard } from 'src/auth/guards';
 
-@ApiTags('auth')
+@ApiTags('authentications')
 @Controller('auth')
 export class AuthController {
   private readonly logger = new Logger('AuthController');
@@ -14,6 +15,7 @@ export class AuthController {
     private readonly recordService: RecordService,
   ) {}
 
+  @ApiOperation({ summary: 'Auth Web' })
   @Post('login')
   async loginUser(@Body() loginUserDto: LoginUserDto, @Res({ passthrough: true }) res: Response) {
     this.logger.log({ username: loginUserDto.username });
@@ -46,6 +48,7 @@ export class AuthController {
     }
   }
 
+  @ApiOperation({ summary: 'Auth Web' })
   @Get('logout')
   async logout(@Res() res: Response): Promise<void> {
     res.clearCookie('msp', {
@@ -56,5 +59,69 @@ export class AuthController {
     res.status(200).json({
       message: 'Logout successful',
     });
+  }
+
+  @ApiOperation({ summary: 'Auth AppMobile' })
+  @ApiResponse({ status: 200, description: 'Login AppMobile' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        username: { type: 'string', example: 'numeroCI' },
+        cellphone: { type: 'string', example: '71931166' },
+        signature: { type: 'string', example: 'firma' },
+        firebaseToken: { type: 'string', example: 'token' },
+        isBiometric: { type: 'boolean', example: 'true' },
+        isRegisterCellphone: { type: 'boolean', example: 'false' },
+      },
+    },
+  })
+  @Post('loginAppMobile')
+  async loginAppMobile(@Body() body: any) {
+    this.nats.emit('appMobile.record.create', {
+      action: 'loginAppMobile',
+      description: 'Inicio de sesión en App Móvil',
+      metadata: {
+        username: body.username,
+        cellphone: body.cellphone,
+        isBiometric: body.isBiometric,
+        isRegisterCellphone: body.isRegisterCellphone,
+      },
+    });
+    return await this.nats.firstValue('auth.loginAppMobile', body);
+  }
+
+  @ApiOperation({ summary: 'Auth AppMobile' })
+  @ApiResponse({ status: 200, description: 'Verificar pin SMS y crear token' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        pin: { type: 'string', example: '1234' },
+        messageId: { type: 'string', example: '99999' },
+      },
+    },
+  })
+  @Post('verifyPin')
+  async verifyPin(@Body() body: any) {
+    this.nats.emit('appMobile.record.create', {
+      action: 'verifyPin',
+      description: 'verificación de PIN para autenticación en App Móvil',
+      metadata: body,
+    });
+    return await this.nats.firstValue('auth.verifyPin', body);
+  }
+
+  @ApiOperation({ summary: 'Auth AppMobile' })
+  @ApiResponse({ status: 200, description: 'Eliminar sesión' })
+  @Delete('logoutAppMobile')
+  @UseGuards(AuthAppMobileGuard)
+  async logoutAppMobile(@Req() req: any) {
+    this.nats.emit('appMobile.record.create', {
+      action: 'logoutAppMobile',
+      description: 'Cierre de sesión en App Móvil',
+      metadata: req.user,
+    });
+    return await this.nats.firstValue('auth.logoutAppMobile', req.user);
   }
 }
