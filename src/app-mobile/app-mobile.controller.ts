@@ -30,11 +30,6 @@ export class AppMobileController {
   @ApiResponse({ status: 200, description: 'Obtener todos los préstamos' })
   @UseGuards(AuthAppMobileGuard)
   async informationLoan(@Param('affiliateId') affiliateId: string) {
-    this.nats.emit('appMobile.record.create', {
-      action: 'informationLoan',
-      description: 'Obtener todos los préstamos',
-      metadata: { affiliateId },
-    });
     return await this.nats.firstValue('appMobile.loans.informationLoan', { affiliateId });
   }
 
@@ -53,11 +48,6 @@ export class AppMobileController {
       'Content-Type': 'application/pdf',
       'Content-Disposition': `inline; filename="${response.name}"`,
       'Content-Length': pdfBuffer.length,
-    });
-    this.nats.emit('appMobile.record.create', {
-      action: 'loanPrintPlan',
-      description: 'Imprimir plan de préstamo',
-      metadata: { loanId },
     });
     return res.send(pdfBuffer);
   }
@@ -164,11 +154,14 @@ export class AppMobileController {
   @Get('ecoComLiveness')
   @ApiResponse({ status: 200, description: 'Obtener liveness del afiliado de complemento' })
   @UseGuards(AuthAppMobileGuard)
-  async ecoComLiveness(@Headers('authorization') authorization: string) {
+  async ecoComLiveness(
+    @Headers('authorization') authorization: string,
+    @Req() req: any,
+  ) {
     this.nats.emit('appMobile.record.create', {
       action: 'ecoComLiveness',
-      description: 'Obtener liveness del afiliado de complemento',
-      metadata: {},
+      description: 'Obtener vivencia del afiliado de complemento',
+      metadata: req.user,
     });
     return await this.nats.firstValue('appMobile.ecoComLiveness', { authorization });
   }
@@ -180,7 +173,7 @@ export class AppMobileController {
     const { affiliateId } = req.user;
     this.nats.emit('appMobile.record.create', {
       action: 'ecoComLivenessShow',
-      description: 'Mostrar liveness del afiliado de complemento',
+      description: 'Verificar vivencia del afiliado de complemento',
       metadata: { affiliateId },
     });
     return await this.nats.firstValue('appMobile.ecoComLivenessShow', {
@@ -190,7 +183,7 @@ export class AppMobileController {
   }
 
   @Post('ecoComLivenessStore')
-  @ApiResponse({ status: 200, description: 'Guardar liveness del afiliado de complemento' })
+  @ApiResponse({ status: 200, description: 'Guardar vivencia del afiliado de complemento' })
   @ApiBody({
     schema: {
       type: 'object',
@@ -205,7 +198,7 @@ export class AppMobileController {
   async ecoComLivenessStore(@Headers('authorization') authorization: string, @Body() data: any) {
     this.nats.emit('appMobile.record.create', {
       action: 'ecoComLivenessStore',
-      description: 'Guardar liveness del afiliado de complemento',
+      description: 'Guardar vivencia del afiliado de complemento',
       metadata: { device_id: data.device_id, firebase_token: data.firebase_token },
     });
     return await this.nats.firstValue('appMobile.ecoComLivenessStore', { authorization, data });
@@ -312,7 +305,7 @@ export class AppMobileController {
     });
     return res.send(pdfBuffer);
   }
-
+e
   @Get('ecoComEconomicComplementsPrint/:economicComplementId')
   @ApiResponse({ status: 200, description: 'Imprimir complemento económico' })
   @UseGuards(AuthAppMobileGuard)
@@ -340,7 +333,7 @@ export class AppMobileController {
   }
 
   @Get('ecoComProcedure/:ecoComProcedureId')
-  @ApiResponse({ status: 200, description: 'Obtener procedimiento del afiliado de complemento' })
+  @ApiResponse({ status: 200, description: 'Obtener modalidad de complemento del afiliado' })
   @UseGuards(AuthAppMobileGuard)
   async ecoComProcedure(
     @Headers('authorization') authorization: string,
@@ -348,7 +341,7 @@ export class AppMobileController {
   ) {
     this.nats.emit('appMobile.record.create', {
       action: 'ecoComProcedure',
-      description: 'Obtener procedimiento del afiliado de complemento',
+      description: 'Obtener modalidad de complemento del afiliado',
       metadata: { ecoComProcedureId },
     });
     return await this.nats.firstValue('appMobile.ecoComProcedure', {
