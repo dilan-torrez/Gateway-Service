@@ -9,59 +9,61 @@ export class PvtStiController {
   constructor(private readonly httpService: HttpService) {}
 
   @MessagePattern('pvtSti.informationLoan')
-  async informationLoan(body: { affiliateId: string }) {
+  async informationLoan(body: { authorization: string; affiliateId: string }) {
+    const { authorization, affiliateId } = body;
+    const url = `${PvtEnvs.PvtBackendApiServer}/app/get_information_loan/${affiliateId}`;
     const { data } = await firstValueFrom(
-      this.httpService.get(
-        `${PvtEnvs.PvtBackendApiServer}/app/get_information_loan_v2/${body.affiliateId}`,
-      ),
+      this.httpService.get(url, { headers: { authorization } }),
     );
     return data;
   }
 
   @MessagePattern('pvtSti.loanPrintPlan')
-  async loanPrintPlan(body: { loanId: string }) {
+  async loanPrintPlan(body: { authorization: string; loanId: string }) {
+    const { authorization, loanId } = body;
+    const url = `${PvtEnvs.PvtBackendApiServer}/app/loan/${loanId}/print/plan_v2`;
     const { data } = await firstValueFrom(
-      this.httpService.get(`${PvtEnvs.PvtBackendApiServer}/app/loan/${body.loanId}/print/plan_v2`),
+      this.httpService.get(url, { headers: { authorization } }),
     );
     return data;
   }
 
   @MessagePattern('pvtSti.loanPrintKardex')
-  async loanPrintKardex(body: { loanId: string }) {
+  async loanPrintKardex(body: { authorization: string; loanId: string }) {
+    const { authorization, loanId } = body;
+    const url = `${PvtEnvs.PvtBackendApiServer}/app/loan/${loanId}/print/kardex_v2`;
     const { data } = await firstValueFrom(
-      this.httpService.get(
-        `${PvtEnvs.PvtBackendApiServer}/app/loan/${body.loanId}/print/kardex_v2`,
-      ),
+      this.httpService.get(url, { headers: { authorization } }),
     );
     return data;
   }
 
   @MessagePattern('pvtSti.allContributions')
-  async allContributions(body: { affiliateId: string }) {
+  async allContributions(body: { authorization: string; affiliateId: string }) {
+    const { authorization, affiliateId } = body;
+    const url = `${PvtEnvs.PvtBackendApiServer}/app/all_contributions/${affiliateId}`;
     const { data } = await firstValueFrom(
-      this.httpService.get(
-        `${PvtEnvs.PvtBackendApiServer}/app/all_contributions_v2/${body.affiliateId}`,
-      ),
+      this.httpService.get(url, { headers: { authorization } }),
     );
     return data;
   }
 
   @MessagePattern('pvtSti.contributionsPassive')
-  async contributionsPassive(body: { affiliateId: string }) {
+  async contributionsPassive(body: { authorization: string; affiliateId: string }) {
+    const { authorization, affiliateId } = body;
+    const url = `${PvtEnvs.PvtBackendApiServer}/app/contributions_passive_v2/${affiliateId}`;
     const { data } = await firstValueFrom(
-      this.httpService.get(
-        `${PvtEnvs.PvtBackendApiServer}/app/contributions_passive_v2/${body.affiliateId}`,
-      ),
+      this.httpService.get(url, { headers: { authorization } }),
     );
     return data;
   }
 
   @MessagePattern('pvtSti.contributionsActive')
-  async contributionsActive(body: { affiliateId: string }) {
+  async contributionsActive(body: { authorization: string; affiliateId: string }) {
+    const { authorization, affiliateId } = body;
+    const url = `${PvtEnvs.PvtBackendApiServer}/app/contributions_active_v2/${affiliateId}`;
     const { data } = await firstValueFrom(
-      this.httpService.get(
-        `${PvtEnvs.PvtBackendApiServer}/app/contributions_active_v2/${body.affiliateId}`,
-      ),
+      this.httpService.get(url, { headers: { authorization } }),
     );
     return data;
   }

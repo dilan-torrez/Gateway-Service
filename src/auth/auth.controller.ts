@@ -80,7 +80,7 @@ export class AuthController {
   async loginAppMobile(@Body() body: any) {
     this.nats.emit('appMobile.record.create', {
       action: 'loginAppMobile',
-      description: 'Inicio de sesión en App Móvil',
+      description: 'Intento de inicio de sesión en App Móvil',
       metadata: {
         username: body.username,
         cellphone: body.cellphone,
@@ -88,7 +88,22 @@ export class AuthController {
         isRegisterCellphone: body.isRegisterCellphone,
       },
     });
-    return await this.nats.firstValue('auth.loginAppMobile', body);
+    const response = await this.nats.firstValue('auth.loginAppMobile', body);
+    const { error, message, data } = response;
+    
+    if (!('messageId' in response) && !error) {
+      this.nats.emit('appMobile.record.create', {
+        action: 'loginAppMobile',
+        description: message,
+        metadata: {
+          username: body.username,
+          isPolice: data.information.isPolice,
+          affiliateId: data.information.affiliateId,
+        },
+      });
+    }
+
+    return response;
   }
 
   @ApiOperation({ summary: 'Auth AppMobile' })
@@ -104,12 +119,22 @@ export class AuthController {
   })
   @Post('verifyPin')
   async verifyPin(@Body() body: any) {
-    this.nats.emit('appMobile.record.create', {
-      action: 'verifyPin',
-      description: 'verificación de PIN para autenticación en App Móvil',
-      metadata: body,
-    });
-    return await this.nats.firstValue('auth.verifyPin', body);
+    
+    const response = await this.nats.firstValue('auth.verifyPin', body);
+    const { error, message, data } = response;
+    
+    if (!error) {
+      this.nats.emit('appMobile.record.create', {
+        action: 'verifyPin',
+        description: message,
+        metadata: {
+          username: data.information.username,
+          isPolice: data.information.isPolice,
+          affiliateId: data.information.affiliateId,
+        },
+      });
+    }
+    return response;
   }
 
   @ApiOperation({ summary: 'Auth AppMobile' })
