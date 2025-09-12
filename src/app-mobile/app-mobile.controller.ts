@@ -13,22 +13,39 @@ import {
   Query,
 } from '@nestjs/common';
 import { Response } from 'express';
-import { AuthAppMobileGuard } from 'src/auth/guards';
+import { AuthAppMobileGuard, Public } from 'src/auth/guards';
 
 @ApiTags('appMobile')
+@UseGuards(AuthAppMobileGuard)
 @Controller('appMobile')
 export class AppMobileController {
   constructor(private readonly nats: NatsService) {}
 
+  @Public()
   @Get('globalCities')
   @ApiResponse({ status: 200, description: 'Obtener todas las ciudades' })
   async globalCities() {
     return await this.nats.firstValue('appMobile.global.cities', {});
   }
 
+  @Post('version')
+  @ApiResponse({ status: 200, description: 'Obtener version' })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        store: { type: 'string', example: 'playstore' },
+        version: { type: 'string', example: '4.0.1' },
+      },
+    },
+  })
+  @Public()
+  async version(@Body() body: any) {
+    return await this.nats.firstValue('appMobile.version', body);
+  }
+
   @Get('loanInformation/:affiliateId')
   @ApiResponse({ status: 200, description: 'Obtener todos los préstamos' })
-  @UseGuards(AuthAppMobileGuard)
   async informationLoan(
     @Headers('authorization') authorization: string,
     @Param('affiliateId') affiliateId: string,
@@ -41,7 +58,6 @@ export class AppMobileController {
 
   @Get('loanPrintPlan/:loanId')
   @ApiResponse({ status: 200, description: 'Imprimir plan de préstamo' })
-  @UseGuards(AuthAppMobileGuard)
   async loanPrintPlan(
     @Headers('authorization') authorization: string,
     @Param('loanId') loanId: string,
@@ -67,7 +83,6 @@ export class AppMobileController {
 
   @Get('loanPrintKardex/:loanId')
   @ApiResponse({ status: 200, description: 'Imprimir kardex de préstamo' })
-  @UseGuards(AuthAppMobileGuard)
   async loanPrintKardex(
     @Headers('authorization') authorization: string,
     @Param('loanId') loanId: string,
@@ -93,7 +108,6 @@ export class AppMobileController {
 
   @Get('contributionsAll/:affiliateId')
   @ApiResponse({ status: 200, description: 'Obtener todas las contribuciones' })
-  @UseGuards(AuthAppMobileGuard)
   async allContributions(
     @Headers('authorization') authorization: string,
     @Param('affiliateId') affiliateId: string,
@@ -106,7 +120,6 @@ export class AppMobileController {
 
   @Get('contributionsPassive/:affiliateId')
   @ApiResponse({ status: 200, description: 'Obtener contribuciones pasivas' })
-  @UseGuards(AuthAppMobileGuard)
   async contributionsPassive(
     @Headers('authorization') authorization: string,
     @Param('affiliateId') affiliateId: string,
@@ -132,7 +145,6 @@ export class AppMobileController {
 
   @Get('contributionsActive/:affiliateId')
   @ApiResponse({ status: 200, description: 'Obtener contribuciones activas' })
-  @UseGuards(AuthAppMobileGuard)
   async contributionsActive(
     @Headers('authorization') authorization: string,
     @Param('affiliateId') affiliateId: string,
@@ -156,25 +168,9 @@ export class AppMobileController {
     return res.send(pdfBuffer);
   }
 
-  @Post('version')
-  @ApiResponse({ status: 200, description: 'Obtener version' })
-  @ApiBody({
-    schema: {
-      type: 'object',
-      properties: {
-        store: { type: 'string', example: 'playstore' },
-        version: { type: 'string', example: '3.0.8' },
-      },
-    },
-  })
-  async version(@Body() body: any) {
-    return await this.nats.firstValue('appMobile.version', body);
-  }
-
   @Get('message/:type')
   @ApiResponse({ status: 200, description: 'Obtener mensaje' })
   @ApiParam({ name: 'type', type: 'string', example: 'before_liveness | verified' })
-  @UseGuards(AuthAppMobileGuard)
   async typeVerify(@Param('type') type: string, @Req() req: any) {
     const { tokenId } = req.user;
     return await this.nats.firstValue('appMobile.typeVerify', { type, tokenId });
@@ -182,14 +178,12 @@ export class AppMobileController {
 
   @Get('ecoComAffiliateObservations/:affiliateId')
   @ApiResponse({ status: 200, description: 'Obtener observaciones del afiliado de complemento' })
-  @UseGuards(AuthAppMobileGuard)
   async ecoComAffiliateObservations(@Param('affiliateId') affiliateId: string) {
     return await this.nats.firstValue('appMobile.ecoComAffiliateObservations', { affiliateId });
   }
 
   @Get('ecoComLiveness')
   @ApiResponse({ status: 200, description: 'Obtener liveness del afiliado de complemento' })
-  @UseGuards(AuthAppMobileGuard)
   async ecoComLiveness(@Headers('authorization') authorization: string, @Req() req: any) {
     this.nats.emit('appMobile.record.create', {
       action: 'ecoComLiveness',
@@ -201,7 +195,6 @@ export class AppMobileController {
 
   @Get('ecoComLivenessShow/:affiliateId')
   @ApiResponse({ status: 200, description: 'Mostrar liveness del afiliado de complemento' })
-  @UseGuards(AuthAppMobileGuard)
   async ecoComLivenessShow(@Headers('authorization') authorization: string, @Req() req: any) {
     const { affiliateId } = req.user;
     this.nats.emit('appMobile.record.create', {
@@ -227,7 +220,6 @@ export class AppMobileController {
       },
     },
   })
-  @UseGuards(AuthAppMobileGuard)
   async ecoComLivenessStore(@Headers('authorization') authorization: string, @Body() data: any) {
     this.nats.emit('appMobile.record.create', {
       action: 'ecoComLivenessStore',
@@ -251,7 +243,6 @@ export class AppMobileController {
     description: 'Si es true, obtiene solo los vigentes',
   })
   @ApiResponse({ status: 200, description: 'Obtener complemento económico' })
-  @UseGuards(AuthAppMobileGuard)
   async ecoComEconomicComplements(
     @Headers('authorization') authorization: string,
     @Query('page') page: number,
@@ -266,7 +257,6 @@ export class AppMobileController {
 
   @Get('ecoComEconomicComplementsShow/:economicComplementId')
   @ApiResponse({ status: 200, description: 'Obtener complemento económico' })
-  @UseGuards(AuthAppMobileGuard)
   async ecoComEconomicComplementsShow(
     @Headers('authorization') authorization: string,
     @Param('economicComplementId') economicComplementId: string,
@@ -308,7 +298,6 @@ export class AppMobileController {
       },
     },
   })
-  @UseGuards(AuthAppMobileGuard)
   async ecoComEconomicComplementsStore(
     @Headers('authorization') authorization: string,
     @Body() data: any,
@@ -341,7 +330,6 @@ export class AppMobileController {
   e;
   @Get('ecoComEconomicComplementsPrint/:economicComplementId')
   @ApiResponse({ status: 200, description: 'Imprimir complemento económico' })
-  @UseGuards(AuthAppMobileGuard)
   async ecoComEconomicComplementsPrint(
     @Headers('authorization') authorization: string,
     @Param('economicComplementId') economicComplementId: string,
@@ -367,7 +355,6 @@ export class AppMobileController {
 
   @Get('ecoComProcedure/:ecoComProcedureId')
   @ApiResponse({ status: 200, description: 'Obtener modalidad de complemento del afiliado' })
-  @UseGuards(AuthAppMobileGuard)
   async ecoComProcedure(
     @Headers('authorization') authorization: string,
     @Param('ecoComProcedureId') ecoComProcedureId: string,
@@ -402,7 +389,6 @@ export class AppMobileController {
       },
     },
   })
-  @UseGuards(AuthAppMobileGuard)
   async ecoComSaveIdentity(
     @Headers('authorization') authorization: string,
     @Body() data: any,
