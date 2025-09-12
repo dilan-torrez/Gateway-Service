@@ -90,7 +90,7 @@ export class AuthController {
     });
     const response = await this.nats.firstValue('auth.loginAppMobile', body);
     const { error, message, data } = response;
-    
+
     if (!('messageId' in response) && !error) {
       this.nats.emit('appMobile.record.create', {
         action: 'loginAppMobile',
@@ -119,10 +119,9 @@ export class AuthController {
   })
   @Post('verifyPin')
   async verifyPin(@Body() body: any) {
-    
     const response = await this.nats.firstValue('auth.verifyPin', body);
     const { error, message, data } = response;
-    
+
     if (!error) {
       this.nats.emit('appMobile.record.create', {
         action: 'verifyPin',
