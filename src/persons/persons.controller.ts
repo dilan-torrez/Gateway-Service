@@ -10,12 +10,13 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { CreatePersonFingerprintDto, FilteredPaginationDto } from './dto';
-import { ApiTags, ApiResponse, ApiBody } from '@nestjs/swagger';
+import { FilteredPaginationDto } from './dto';
+import { ApiTags, ApiResponse } from '@nestjs/swagger';
 import { AuthGuard } from 'src/auth/guards/auth.guard';
 import { NatsService, RecordService, FtpService } from 'src/common';
 
 @ApiTags('persons')
+@UseGuards(AuthGuard)
 @Controller('persons')
 export class PersonsController {
   constructor(
@@ -32,7 +33,6 @@ export class PersonsController {
   async showListFingerprint() {
     return this.nats.send('person.showListFingerprint', {});
   }
-  @UseGuards(AuthGuard)
   @Get()
   @ApiResponse({ status: 200, description: 'Mostrar todas las personas' })
   findAllPersons(@Query() filterDto: FilteredPaginationDto) {
@@ -75,9 +75,7 @@ export class PersonsController {
     return this.nats.send('person.findAffiliates', { id });
   }
 
-  @UseGuards(AuthGuard)
   @Post(':personId/createPersonFingerprint')
-  @ApiBody({ type: CreatePersonFingerprintDto }) // Esto especifica que el cuerpo de la solicitud debe ser del tipo CreatePersonFingerprintDto
   @ApiResponse({
     status: 200,
     description: 'Crear una huella digital de una persona',
@@ -98,7 +96,6 @@ export class PersonsController {
     @Req() req: any,
     @Param('personId', ParseIntPipe) personId: string,
     @Body() body: { personFingerprints: any[]; wsqFingerprints: any[] },
-    //createPersonFingerprintDto: CreatePersonFingerprintDto,
   ) {
     const { messages, registros, uploadFiles, removeFiles } = await this.nats.firstValue(
       'person.createPersonFingerprint',
