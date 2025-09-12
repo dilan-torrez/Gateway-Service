@@ -1,9 +1,10 @@
-import { Controller, Post, UploadedFile, UseInterceptors, Body } from '@nestjs/common';
+import { Controller, Post, UploadedFile, UseInterceptors, Body, UseGuards } from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
 import { FtpService, SmsDto } from './';
 import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { SmsService } from 'src/common';
+import { AuthGuard } from 'src/auth/guards';
 
 @ApiTags('common')
 @Controller('common')
@@ -50,6 +51,7 @@ export class CommonController {
     },
   })
   @UseInterceptors(FileInterceptor('chunk'))
+  @UseGuards(AuthGuard)
   async uploadChunk(@UploadedFile() chunk: Express.Multer.File, @Body() body: any) {
     const { nameChunk } = body;
     await this.ftp.uploadChunk(chunk, nameChunk);

@@ -9,6 +9,7 @@ import {
 
 import { Request } from 'express';
 import { NatsService, RecordService } from 'src/common';
+import { Reflector } from '@nestjs/core';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -16,9 +17,19 @@ export class AuthGuard implements CanActivate {
   constructor(
     private nats: NatsService,
     private readonly recordService: RecordService,
+    private reflector: Reflector,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    const isPublic = this.reflector.getAllAndOverride<boolean>('isPublic', [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    if (isPublic) {
+      return true;
+    }
+
     const request: Request = context.switchToHttp().getRequest();
     const apiKey = request.headers['x-api-key'] as string;
     const token = this.extractTokenFromHeader(request);

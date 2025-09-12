@@ -5,15 +5,27 @@ import {
   Logger,
   UnauthorizedException,
 } from '@nestjs/common';
-
+import { Reflector } from '@nestjs/core';
 import { NatsService } from 'src/common';
 
 @Injectable()
 export class AuthAppMobileGuard implements CanActivate {
   private readonly logger = new Logger('AuthAppMobileGuard');
-  constructor(private nats: NatsService) {}
+  constructor(
+    private nats: NatsService,
+    private reflector: Reflector,
+  ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    const isPublic = this.reflector.getAllAndOverride<boolean>('isPublic', [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+
+    if (isPublic) {
+      return true;
+    }
+
     const request = context.switchToHttp().getRequest();
     const authHeader = request.headers['authorization'];
 
