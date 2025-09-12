@@ -26,6 +26,7 @@ import { AuthGuard } from 'src/auth/guards/auth.guard';
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
 
 @ApiTags('affiliates')
+@UseGuards(AuthGuard)
 @Controller('affiliates')
 export class AffiliatesController {
   constructor(
@@ -82,9 +83,7 @@ export class AffiliatesController {
       },
     },
   })
-  @UseGuards(AuthGuard)
   @UseInterceptors(AnyFilesInterceptor())
-  //@UseInterceptors(FileInterceptor('documentPdf'))
   async createOrUpdateDocument(
     @Req() req: any,
     @Param('affiliateId') affiliateId: string,
@@ -173,7 +172,6 @@ export class AffiliatesController {
     type: Number,
     example: 5,
   })
-  @UseGuards(AuthGuard)
   async createOrUpdateFileDossier(
     @Req() req: any,
     @Param('affiliateId') affiliateId: string,
@@ -263,7 +261,6 @@ export class AffiliatesController {
     };
   }
 
-  @UseGuards(AuthGuard)
   @Get(':affiliateId/modality/:modalityId/collate')
   @ApiResponse({
     status: 200,
