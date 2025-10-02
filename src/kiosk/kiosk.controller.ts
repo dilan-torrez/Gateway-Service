@@ -18,9 +18,11 @@ import { SaveDataKioskAuthDto } from './dto/save-data-kiosk-auth.dto';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { UploadPhotosDto } from './dto/save-photos.dto';
 import { NatsService, RecordService, FtpService } from 'src/common';
+import { Records } from 'src/records/records.interceptor';
 
-@Controller('kiosk')
 @ApiTags('kiosk')
+@UseInterceptors(Records)
+@Controller('kiosk')
 export class KioskController {
   constructor(
     private readonly nats: NatsService,
@@ -56,13 +58,12 @@ export class KioskController {
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: UploadPhotosDto })
   async uploadPhoto(
+    @Body() body: UploadPhotosDto,
     @UploadedFiles()
     files: { photoIdentityCard?: Express.Multer.File[]; photoFace?: Express.Multer.File[] },
-    @Body() body: UploadPhotosDto,
   ) {
     const hasCI = !!(files?.photoIdentityCard && files.photoIdentityCard.length > 0);
     const hasFace = !!(files?.photoFace && files.photoFace.length > 0);
-
     const photos = await this.nats.firstValue('kiosk.savePhotos', {
       personId: body.personId,
       hasCI,
@@ -88,6 +89,7 @@ export class KioskController {
 
     return {
       message: 'Fotos guardadas exitosamente',
+      personId: body.personId,
     };
   }
 
