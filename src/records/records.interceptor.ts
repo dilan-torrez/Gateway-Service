@@ -1,5 +1,5 @@
 import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
-import { Observable, tap, catchError, finalize } from 'rxjs';
+import { Observable, tap, catchError } from 'rxjs';
 import { NatsService } from 'src/common';
 import 'reflect-metadata';
 

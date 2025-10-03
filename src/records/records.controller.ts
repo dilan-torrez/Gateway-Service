@@ -11,9 +11,4 @@ export class RecordsController {
   async findAllAppMobile(@Param('affiliateId') affiliateId: string) {
     return this.nats.firstValue('records.findAllAppMobile', { affiliateId });
   }
-
-  @Get('beneficiary/:affiliateId')
-  async findAllBeneficiary(@Param('affiliateId') affiliateId: string) {
-    return this.nats.firstValue('records.findAll', {});
-  }
 }

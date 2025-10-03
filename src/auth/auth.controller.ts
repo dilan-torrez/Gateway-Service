@@ -3,7 +3,6 @@ import {
   Controller,
   Delete,
   Get,
-  Logger,
   Post,
   Req,
   Res,
@@ -13,7 +12,7 @@ import {
 import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { AuthAppMobileGuard } from 'src/auth/guards';
-import { NatsService, RecordService } from 'src/common';
+import { NatsService } from 'src/common';
 import { Records } from 'src/records/records.interceptor';
 import { LoginUserDto } from './dto';
 import { CurrentUser } from './interfaces/current-user.interface';
@@ -22,11 +21,7 @@ import { CurrentUser } from './interfaces/current-user.interface';
 @UseInterceptors(Records)
 @Controller('auth')
 export class AuthController {
-  private readonly logger = new Logger('AuthController');
-  constructor(
-    private readonly nats: NatsService,
-    private readonly recordService: RecordService,
-  ) {}
+  constructor(private readonly nats: NatsService) {}
 
   @ApiOperation({ summary: 'Auth Web - loginUser' })
   @ApiBody({
