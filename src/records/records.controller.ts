@@ -9,13 +9,11 @@ export class RecordsController {
 
   @Get('appMobile/:affiliateId')
   async findAllAppMobile(@Param('affiliateId') affiliateId: string) {
-    console.log('affiliateId', affiliateId);
     return this.nats.firstValue('records.findAllAppMobile', { affiliateId });
   }
 
   @Get('beneficiary/:affiliateId')
   async findAllBeneficiary(@Param('affiliateId') affiliateId: string) {
-    console.log('affiliateId', affiliateId);
     return this.nats.firstValue('records.findAll', {});
   }
 }
