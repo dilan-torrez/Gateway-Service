@@ -43,6 +43,8 @@ export class AuthAppMobileGuard implements CanActivate {
       throw new UnauthorizedException({ error: true, message: 'Sin autorización, ' + message });
     }
     const user = {
+      personId: response.personId,
+      fullname: response.fullname,
       affiliateId: response.affiliateId,
       tokenId: response.tokenId,
     };

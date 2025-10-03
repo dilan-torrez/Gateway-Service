@@ -7,21 +7,21 @@ import {
   ParseUUIDPipe,
   Post,
   Query,
-  Req,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
-import { FilteredPaginationDto } from './dto';
-import { ApiTags, ApiResponse } from '@nestjs/swagger';
+import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from 'src/auth/guards/auth.guard';
-import { NatsService, RecordService, FtpService } from 'src/common';
-
-@ApiTags('persons')
+import { FtpService, NatsService } from 'src/common';
+import { Records } from 'src/records/records.interceptor';
+import { FilteredPaginationDto } from './dto';
+@ApiTags('beneficiaries')
 @UseGuards(AuthGuard)
-@Controller('persons')
+@UseInterceptors(Records)
+@Controller('beneficiaries/persons')
 export class PersonsController {
   constructor(
     private readonly nats: NatsService,
-    private readonly recordService: RecordService,
     private readonly ftp: FtpService,
   ) {}
 
@@ -93,11 +93,10 @@ export class PersonsController {
     description: 'Crear una huella digital de una persona',
   })
   async createPersonFingerprint(
-    @Req() req: any,
     @Param('personId', ParseIntPipe) personId: string,
     @Body() body: { personFingerprints: any[]; wsqFingerprints: any[] },
   ) {
-    const { messages, registros, uploadFiles, removeFiles } = await this.nats.firstValue(
+    const { message, registros, uploadFiles, removeFiles } = await this.nats.firstValue(
       'person.createPersonFingerprint',
       {
         personId,
@@ -108,16 +107,8 @@ export class PersonsController {
     await this.ftp.removeFile(removeFiles);
     await this.ftp.uploadFile(body.wsqFingerprints, uploadFiles, 'true');
 
-    this.recordService.http(
-      `Registro de huellas digitales de la persona [${personId}]`,
-      req.user,
-      2,
-      +personId,
-      'Person',
-    );
-
     return {
-      messages,
+      message,
       registros,
     };
   }

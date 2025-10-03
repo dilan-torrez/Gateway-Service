@@ -1,22 +1,25 @@
-import { NatsService } from 'src/common';
-import { ApiBody, ApiTags, ApiResponse, ApiParam, ApiQuery } from '@nestjs/swagger';
 import {
+  Body,
   Controller,
   Get,
+  Headers,
   Param,
-  Body,
   Post,
+  Query,
+  Req,
   Res,
   UseGuards,
-  Req,
-  Headers,
-  Query,
+  UseInterceptors,
 } from '@nestjs/common';
+import { ApiBody, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { AuthAppMobileGuard, Public } from 'src/auth/guards';
+import { NatsService } from 'src/common';
+import { Records } from 'src/records/records.interceptor';
 
 @ApiTags('appMobile')
 @UseGuards(AuthAppMobileGuard)
+@UseInterceptors(Records)
 @Controller('appMobile')
 export class AppMobileController {
   constructor(private readonly nats: NatsService) {}

@@ -23,6 +23,6 @@ export class HashPvtGuard implements CanActivate {
       throw new ForbiddenException('Token no válido');
     }
 
-    return true; // Permitir acceso
+    return true;
   }
 }
