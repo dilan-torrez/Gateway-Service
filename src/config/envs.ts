@@ -3,6 +3,7 @@ import * as joi from 'joi';
 
 interface EnvVars {
   PORT: number;
+  ENVIRONMENT: string;
 
   NATS_SERVERS: string[];
 
@@ -24,11 +25,16 @@ interface EnvVars {
   FTP_ROOT: string;
   FTP_SSL: boolean;
 
+  SMS_SERVER_URL: string;
+  SMS_SERVER_ROOT: string;
+  SMS_SERVER_PASSWORD: string;
+  SMS_PROVIDER: string;
 }
 
 const envsSchema = joi
   .object({
     PORT: joi.number().required(),
+    ENVIRONMENT: joi.string().valid('prod', 'dev').required(),
 
     NATS_SERVERS: joi.array().items(joi.string()).required(),
     FRONTENDS_SERVERS: joi.array().items(joi.string()).required(),
@@ -38,6 +44,11 @@ const envsSchema = joi
     FTP_PASSWORD: joi.string(),
     FTP_ROOT: joi.string(),
     FTP_SSL: joi.boolean(),
+
+    SMS_SERVER_URL: joi.string(),
+    SMS_SERVER_ROOT: joi.string(),
+    SMS_SERVER_PASSWORD: joi.string(),
+    SMS_PROVIDER: joi.string(),
 
     PVT_API_SERVER: joi.string(),
     PVT_HASH_SECRET: joi.string(),
@@ -64,6 +75,7 @@ const envVars: EnvVars = value;
 
 export const PortEnvs = {
   port: envVars.PORT,
+  environment: envVars.ENVIRONMENT || 'dev',
 };
 
 export const NastEnvs = {
@@ -94,4 +106,11 @@ export const envsFtp = {
   ftpPassword: envVars.FTP_PASSWORD,
   ftpRoot: envVars.FTP_ROOT,
   ftpSsl: envVars.FTP_SSL,
+};
+
+export const smsEnvs = {
+  smsServerUrl: envVars.SMS_SERVER_URL,
+  smsServerRoot: envVars.SMS_SERVER_ROOT,
+  smsServerPassword: envVars.SMS_SERVER_PASSWORD,
+  smsProvider: envVars.SMS_PROVIDER,
 };

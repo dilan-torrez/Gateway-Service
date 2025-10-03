@@ -5,6 +5,7 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { NastEnvs } from './config';
 import { MicroserviceOptions, Transport } from '@nestjs/microservices';
+import * as bodyParser from 'body-parser';
 
 async function bootstrap() {
   const logger = new Logger('Microservice-Gateway');
@@ -33,18 +34,19 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
-
+  app.use(bodyParser.json({ limit: '50mb' }));
+  app.use(bodyParser.urlencoded({ limit: '50mb', extended: true }));
   logger.log(`Gateway running on port ${PortEnvs.port}`);
-
-  //Configuración swagger (Documentación de las APIS)
-  const config = new DocumentBuilder()
-    .setTitle('APIS DOCUMENTATION')
-    .setDescription('Documentation of the Muserpol Microservices APIs')
-    .setVersion('1.0')
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
-
+  if (PortEnvs.environment === 'dev') {
+    //Configuración swagger (Documentación de las APIS)
+    const config = new DocumentBuilder()
+      .setTitle('APIS DOCUMENTATION')
+      .setDescription('Documentation of the Muserpol Microservices APIs')
+      .setVersion('1.0')
+      .build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api', app, document);
+  }
   await app.listen(PortEnvs.port);
 }
 bootstrap();

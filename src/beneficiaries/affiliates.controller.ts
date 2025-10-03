@@ -1,17 +1,17 @@
 import {
+  BadRequestException,
+  Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
-  Delete,
-  UploadedFiles,
-  UseInterceptors,
   Res,
-  Req,
+  UploadedFiles,
   UseGuards,
-  Body,
-  BadRequestException,
+  UseInterceptors,
 } from '@nestjs/common';
+import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import {
   ApiBody,
   ApiConsumes,
@@ -20,31 +20,20 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { NatsService, RecordService, FtpService } from 'src/common';
 import { Response } from 'express';
 import { AuthGuard } from 'src/auth/guards/auth.guard';
-import { AnyFilesInterceptor } from '@nestjs/platform-express';
+import { FtpService, NatsService } from 'src/common';
+import { Records } from 'src/records/records.interceptor';
 
-@ApiTags('affiliates')
-@Controller('affiliates')
+@ApiTags('beneficiaries')
+@UseGuards(AuthGuard)
+@UseInterceptors(Records)
+@Controller('beneficiaries/affiliates')
 export class AffiliatesController {
   constructor(
     private readonly nats: NatsService,
-    private readonly recordService: RecordService,
     private readonly ftp: FtpService,
   ) {}
-
-  @Get('fileDossiers')
-  @ApiResponse({ status: 200, description: 'Obtener todos los tipos de expedients' })
-  async findAllFileDossiers() {
-    return this.nats.send('affiliate.findAllFileDossiers', []);
-  }
-
-  @Get('documents')
-  @ApiResponse({ status: 200, description: 'Obtener todos los tipos de documentos' })
-  async findAllDocuments() {
-    return this.nats.send('affiliate.findAllDocuments', []);
-  }
 
   @Get(':affiliateId')
   @ApiResponse({ status: 200, description: 'Mostrar datos del afiliado' })
@@ -82,11 +71,8 @@ export class AffiliatesController {
       },
     },
   })
-  @UseGuards(AuthGuard)
   @UseInterceptors(AnyFilesInterceptor())
-  //@UseInterceptors(FileInterceptor('documentPdf'))
   async createOrUpdateDocument(
-    @Req() req: any,
     @Param('affiliateId') affiliateId: string,
     @Param('procedureDocumentId') procedureDocumentId: string,
     @UploadedFiles() files: Express.Multer.File[],
@@ -110,14 +96,6 @@ export class AffiliatesController {
     );
 
     await this.ftp.uploadFile(files, affiliateDocuments);
-
-    this.recordService.http(
-      `Registro de documento [${procedureDocumentId}]`,
-      req.user,
-      2,
-      +affiliateId,
-      'Affiliate',
-    );
 
     return {
       serviceStatus,
@@ -173,15 +151,13 @@ export class AffiliatesController {
     type: Number,
     example: 5,
   })
-  @UseGuards(AuthGuard)
   async createOrUpdateFileDossier(
-    @Req() req: any,
     @Param('affiliateId') affiliateId: string,
     @Param('fileDossierId') fileDossierId: string,
     @Body() body: any,
   ) {
     const { initialName, totalChunks } = body;
-    const { serviceStatus, message, affiliateFileDossiers } = await this.nats.firstValue(
+    const { affiliateFileDossiers, serviceStatus, message } = await this.nats.firstValue(
       'affiliate.createOrUpdateFileDossier',
       {
         affiliateId,
@@ -192,13 +168,6 @@ export class AffiliatesController {
     const fileDossiers = await this.ftp.concatChunks(+fileDossierId, initialName, +totalChunks);
     await this.ftp.uploadFile(fileDossiers, affiliateFileDossiers);
 
-    this.recordService.http(
-      `Unión de chunks y subida de expediente [${fileDossierId}]`,
-      req.user,
-      2,
-      +affiliateId,
-      'Affiliate',
-    );
     return {
       serviceStatus,
       message,
@@ -263,7 +232,6 @@ export class AffiliatesController {
     };
   }
 
-  @UseGuards(AuthGuard)
   @Get(':affiliateId/modality/:modalityId/collate')
   @ApiResponse({
     status: 200,
@@ -279,14 +247,6 @@ export class AffiliatesController {
   @Post('documents/analysis')
   async documentsAnalysis(@Body() body: { path: string; user: string; pass: string }) {
     const { path, user, pass } = body;
-
-    this.recordService.http(
-      `Realizo el análisis de documentos en la ruta ${path}`,
-      user,
-      1,
-      1,
-      'User',
-    );
 
     return this.nats.send('affiliate.documentsAnalysis', { path, user, pass });
   }

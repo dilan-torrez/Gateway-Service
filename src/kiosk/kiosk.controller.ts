@@ -17,15 +17,16 @@ import { HashPvtGuard } from 'src/auth/guards/hashpvt.guard';
 import { SaveDataKioskAuthDto } from './dto/save-data-kiosk-auth.dto';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { UploadPhotosDto } from './dto/save-photos.dto';
-import { NatsService, RecordService, FtpService } from 'src/common';
+import { NatsService, FtpService } from 'src/common';
+import { Records } from 'src/records/records.interceptor';
 
-@Controller('kiosk')
 @ApiTags('kiosk')
+@UseInterceptors(Records)
+@Controller('kiosk')
 export class KioskController {
   constructor(
     private readonly nats: NatsService,
     private readonly httpService: HttpService,
-    private readonly recordService: RecordService,
     private readonly ftp: FtpService,
   ) {}
 
@@ -35,14 +36,12 @@ export class KioskController {
     description: 'Mostrar el listado de huellas digitales',
   })
   async showListFingerprint(@Param('identityCard') identityCard: string) {
-    this.recordService.debug(`GET: person/${identityCard}`);
     return this.nats.send('kiosk.getDataPerson', identityCard);
   }
 
   @Post('saveDataKioskAuth')
   @ApiBody({ type: SaveDataKioskAuthDto })
   async saveDataKioskAuth(@Body() data: SaveDataKioskAuthDto) {
-    this.recordService.debug(`POST: saveDataKioskAuth`);
     return this.nats.send('kiosk.saveDataKioskAuth', data);
   }
 
@@ -56,13 +55,12 @@ export class KioskController {
   @ApiConsumes('multipart/form-data')
   @ApiBody({ type: UploadPhotosDto })
   async uploadPhoto(
+    @Body() body: UploadPhotosDto,
     @UploadedFiles()
     files: { photoIdentityCard?: Express.Multer.File[]; photoFace?: Express.Multer.File[] },
-    @Body() body: UploadPhotosDto,
   ) {
     const hasCI = !!(files?.photoIdentityCard && files.photoIdentityCard.length > 0);
     const hasFace = !!(files?.photoFace && files.photoFace.length > 0);
-
     const photos = await this.nats.firstValue('kiosk.savePhotos', {
       personId: body.personId,
       hasCI,
@@ -88,6 +86,7 @@ export class KioskController {
 
     return {
       message: 'Fotos guardadas exitosamente',
+      personId: body.personId,
     };
   }
 
@@ -97,7 +96,6 @@ export class KioskController {
     description: 'Mostrar el listado de huellas digitales de una persona',
   })
   async getFingerprintComparison(@Param('id') id: number) {
-    this.recordService.debug(`GET: getFingerprintComparison/${id}`);
     const { data } = await this.nats.firstValue('kiosk.getFingerprintComparison', id);
     return await this.ftp.downloadFile(data, 'true');
   }
@@ -112,7 +110,6 @@ export class KioskController {
     @Headers('authorization') authorization: string,
     @Param('identityCard') identityCard: string,
   ) {
-    this.recordService.debug(`GET: person/${identityCard}/ecoCom`);
     const url = `${PvtEnvs.PvtBeApiServer}/kioskoComplemento?ci=${identityCard}`;
     try {
       const { data } = await firstValueFrom(
@@ -127,7 +124,6 @@ export class KioskController {
   @UseGuards(HashPvtGuard)
   @Get('ecoCom/:id')
   async GetEcoComKiosko(@Headers('authorization') authorization: string, @Param('id') id: string) {
-    this.recordService.debug(`GET: ecoCom/${id}`);
     const url = `${PvtEnvs.PvtBeApiServer}/eco_com/${id}`;
     try {
       const { data } = await firstValueFrom(
@@ -142,7 +138,6 @@ export class KioskController {
   @UseGuards(HashPvtGuard)
   @Post('ecoCom')
   async CreateEcoComKiosko(@Headers('authorization') authorization: string, @Body() body) {
-    this.recordService.debug(`POST: ecoCom`);
     const url = `${PvtEnvs.PvtBeApiServer}/eco_com`;
     try {
       const { data } = await firstValueFrom(
@@ -160,7 +155,6 @@ export class KioskController {
     description: 'Obtener préstamos de un afiliado',
   })
   async getAffiliateLoans(@Param('identityCard') identityCard: string) {
-    this.recordService.debug(`GET: procedures/${identityCard}`);
     let ecoComResponse: any = null;
     let loansResponse: any = null;
     const ecoComUrl = `${PvtEnvs.PvtBeApiServer}/kioskoComplemento?ci=${identityCard}`;
@@ -169,11 +163,6 @@ export class KioskController {
       const { data } = await firstValueFrom(this.httpService.get(ecoComUrl));
       ecoComResponse = data;
     } catch (error) {
-      this.recordService.warn({
-        url: ecoComUrl,
-        message: error.message,
-        response: error.response?.data?.message,
-      });
       ecoComResponse = {
         error: error.response?.data?.error,
         canCreate: error.response?.data?.canCreate,
@@ -185,11 +174,6 @@ export class KioskController {
       const { data } = await firstValueFrom(this.httpService.get(loansUrl));
       loansResponse = data;
     } catch (error) {
-      this.recordService.warn({
-        url: loansUrl,
-        message: error.message,
-        response: error.response?.data?.message,
-      });
       loansResponse = {
         error: true,
         message: error.response?.data?.message || 'Error al obtener préstamos',
