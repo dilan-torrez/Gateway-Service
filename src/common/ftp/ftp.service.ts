@@ -212,11 +212,47 @@ export class FtpService {
     }
   }
 
-  // async  (
-  //   initialPath: string,
-  //   finalPath: string,
-  //   files: Array<{ buffer: Buffer; name: string }>,44
-  // ) {
+  async saveDataTmp(path: string, name: string, data: Record<string, any>, ttlMs = 120000) {
+    try {
+      const tempDir = '/tmp/' + path;
+      const filePath = servicePath.join(tempDir, name);
+
+      if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+      }
+
+      fs.writeFileSync(filePath, JSON.stringify(data), 'utf8');
+
+      this.logger.log(`Data saved to ${filePath} successfully`);
+      setTimeout(() => {
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+          this.logger.log(`Data removed from ${filePath} successfully`);
+        }
+      }, ttlMs);
+      return { statusSaved: true, message: 'Data saved successfully' };
+    } catch (error) {
+      this.logger.error('Failed to save data:', error);
+      throw new Error('Failed to save data');
+    }
+  }
+
+  async getDataTmp(path: string, name: string) {
+    try {
+      const tempDir = '/tmp/' + path;
+      const filePath = servicePath.join(tempDir, name);
+
+      if (!fs.existsSync(filePath)) {
+        return null;
+      }
+
+      const raw = fs.readFileSync(filePath, 'utf8');
+
+      return JSON.parse(raw);
+    } catch (error) {
+      return null;
+    }
+  }
 
   async onDestroy() {
     await this.client.close();

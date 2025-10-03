@@ -1,13 +1,18 @@
-import { Controller, Post, UploadedFile, UseInterceptors, Body } from '@nestjs/common';
+import { Controller, Post, UploadedFile, UseInterceptors, Body, UseGuards } from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
-import { FtpService } from './';
+import { FtpService, SmsDto } from './';
 import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { SmsService } from 'src/common';
+import { AuthGuard } from 'src/auth/guards';
 
 @ApiTags('common')
 @Controller('common')
 export class CommonController {
-  constructor(private readonly ftp: FtpService) {}
+  constructor(
+    private readonly ftp: FtpService,
+    private readonly sms: SmsService,
+  ) {}
 
   @MessagePattern('ftp.listFiles')
   async listFiles(data: { path: string; key?: boolean }) {
@@ -46,10 +51,8 @@ export class CommonController {
     },
   })
   @UseInterceptors(FileInterceptor('chunk'))
-  async uploadChunk(
-    @UploadedFile() chunk: Express.Multer.File,
-    @Body() body: any,
-  ) {
+  @UseGuards(AuthGuard)
+  async uploadChunk(@UploadedFile() chunk: Express.Multer.File, @Body() body: any) {
     const { nameChunk } = body;
     await this.ftp.uploadChunk(chunk, nameChunk);
 
@@ -57,5 +60,20 @@ export class CommonController {
       message: 'Chunk subido exitosamente',
       serviceStatus: true,
     };
+  }
+
+  @MessagePattern('ftp.saveDataTmp')
+  async saveDataTmp(data: { path: string; name: string; data: any }) {
+    return await this.ftp.saveDataTmp(data.path, data.name, data.data);
+  }
+
+  @MessagePattern('ftp.getDataTmp')
+  async getDataTmp(data: { path: string; name: string }) {
+    return await this.ftp.getDataTmp(data.path, data.name);
+  }
+
+  @MessagePattern('sms.send')
+  async sendSms(data: SmsDto) {
+    return await this.sms.send(data);
   }
 }

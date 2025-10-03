@@ -1,33 +1,27 @@
 import {
   Body,
   Controller,
-  Delete,
   Get,
   Param,
   ParseIntPipe,
   ParseUUIDPipe,
-  Patch,
   Post,
   Query,
-  Req,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
-import {
-  CreatePersonDto,
-  UpdatePersonDto,
-  CreatePersonFingerprintDto,
-  FilteredPaginationDto,
-} from './dto';
-import { ApiTags, ApiResponse, ApiBody } from '@nestjs/swagger';
+import { ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from 'src/auth/guards/auth.guard';
-import { NatsService, RecordService, FtpService } from 'src/common';
-
-@ApiTags('persons')
-@Controller('persons')
+import { FtpService, NatsService } from 'src/common';
+import { Records } from 'src/records/records.interceptor';
+import { FilteredPaginationDto } from './dto';
+@ApiTags('beneficiaries')
+@UseGuards(AuthGuard)
+@UseInterceptors(Records)
+@Controller('beneficiaries/persons')
 export class PersonsController {
   constructor(
     private readonly nats: NatsService,
-    private readonly recordService: RecordService,
     private readonly ftp: FtpService,
   ) {}
 
@@ -39,7 +33,6 @@ export class PersonsController {
   async showListFingerprint() {
     return this.nats.send('person.showListFingerprint', {});
   }
-  @UseGuards(AuthGuard)
   @Get()
   @ApiResponse({ status: 200, description: 'Mostrar todas las personas' })
   findAllPersons(@Query() filterDto: FilteredPaginationDto) {
@@ -50,27 +43,6 @@ export class PersonsController {
   @ApiResponse({ status: 200, description: 'Mostrar una persona' })
   async findOnePersons(@Param('term') term: string) {
     return this.nats.send('person.findOne', { term, field: 'id' });
-  }
-
-  @Post()
-  @ApiResponse({ status: 200, description: 'Añadir una persona' })
-  createProduct(@Body() createPersonDto: CreatePersonDto) {
-    return this.nats.send('person.create', createPersonDto);
-  }
-
-  @Patch(':id')
-  @ApiResponse({ status: 200, description: 'Editar una persona' })
-  patchProduct(@Param('id', ParseIntPipe) id: number, @Body() updatePersonDto: UpdatePersonDto) {
-    return this.nats.send('person.update', {
-      id,
-      ...updatePersonDto,
-    });
-  }
-
-  @Delete(':id')
-  @ApiResponse({ status: 200, description: 'Eliminar una persona' })
-  deleteProduct(@Param('id') id: string) {
-    return this.nats.send('person.delete', { id });
   }
 
   @Get(':uuid/details')
@@ -103,9 +75,7 @@ export class PersonsController {
     return this.nats.send('person.findAffiliates', { id });
   }
 
-  @UseGuards(AuthGuard)
   @Post(':personId/createPersonFingerprint')
-  @ApiBody({ type: CreatePersonFingerprintDto }) // Esto especifica que el cuerpo de la solicitud debe ser del tipo CreatePersonFingerprintDto
   @ApiResponse({
     status: 200,
     description: 'Crear una huella digital de una persona',
@@ -123,12 +93,10 @@ export class PersonsController {
     description: 'Crear una huella digital de una persona',
   })
   async createPersonFingerprint(
-    @Req() req: any,
     @Param('personId', ParseIntPipe) personId: string,
     @Body() body: { personFingerprints: any[]; wsqFingerprints: any[] },
-    //createPersonFingerprintDto: CreatePersonFingerprintDto,
   ) {
-    const { messages, registros, uploadFiles, removeFiles } = await this.nats.firstValue(
+    const { message, registros, uploadFiles, removeFiles } = await this.nats.firstValue(
       'person.createPersonFingerprint',
       {
         personId,
@@ -139,16 +107,8 @@ export class PersonsController {
     await this.ftp.removeFile(removeFiles);
     await this.ftp.uploadFile(body.wsqFingerprints, uploadFiles, 'true');
 
-    this.recordService.http(
-      `Registro de huellas digitales de la persona [${personId}]`,
-      req.user,
-      2,
-      +personId,
-      'Person',
-    );
-
     return {
-      messages,
+      message,
       registros,
     };
   }
