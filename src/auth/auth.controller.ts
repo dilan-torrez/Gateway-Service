@@ -102,21 +102,7 @@ export class AuthController {
   })
   @Post('verifyPin')
   async verifyPin(@Body() body: any) {
-    const response = await this.nats.firstValue('auth.verifyPin', body);
-    const { error, message, data } = response;
-
-    if (!error) {
-      this.nats.emit('appMobile.record.create', {
-        action: 'verifyPin',
-        description: message,
-        metadata: {
-          username: data.information.username,
-          isPolice: data.information.isPolice,
-          affiliateId: data.information.affiliateId,
-        },
-      });
-    }
-    return response;
+    return await this.nats.firstValue('auth.verifyPin', body);
   }
 
   @ApiOperation({ summary: 'Auth AppMobile - logoutAppMobile' })
@@ -124,11 +110,6 @@ export class AuthController {
   @Delete('logoutAppMobile')
   @UseGuards(AuthAppMobileGuard)
   async logoutAppMobile(@Req() req: any) {
-    this.nats.emit('appMobile.record.create', {
-      action: 'logoutAppMobile',
-      description: 'Cierre de sesión en App Móvil',
-      metadata: req.user,
-    });
     return await this.nats.firstValue('auth.logoutAppMobile', req.user);
   }
 }

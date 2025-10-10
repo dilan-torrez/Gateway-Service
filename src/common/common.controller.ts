@@ -72,6 +72,11 @@ export class CommonController {
     return await this.ftp.getDataTmp(data.path, data.name);
   }
 
+  @MessagePattern('ftp.removeFile')
+  async removeFile(data: string[]) {
+    return await this.ftp.removeFile(data);
+  }
+
   @MessagePattern('sms.send')
   async sendSms(data: SmsDto) {
     return await this.sms.send(data);

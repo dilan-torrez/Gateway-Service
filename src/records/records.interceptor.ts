@@ -1,11 +1,15 @@
 import { Injectable, NestInterceptor, ExecutionContext, CallHandler } from '@nestjs/common';
 import { Observable, tap, catchError } from 'rxjs';
 import { NatsService } from 'src/common';
+import { Reflector } from '@nestjs/core';
 import 'reflect-metadata';
 
 @Injectable()
 export class Records implements NestInterceptor {
-  constructor(public readonly nats: NatsService) {}
+  constructor(
+    private readonly reflector: Reflector,
+    public readonly nats: NatsService,
+  ) {}
 
   public truncate(value: string, maxLength: number): string {
     return value.length > maxLength ? value.slice(0, maxLength) + '...' : value;
@@ -60,7 +64,7 @@ export class Records implements NestInterceptor {
 
         result[key] = this.truncate(value, maxLength);
       } else if (Array.isArray(value)) {
-        const maxShow = 10;
+        const maxShow = 50;
 
         if (value.length > maxShow) {
           result[key] = `<len:${value.length}>`;
@@ -89,6 +93,11 @@ export class Records implements NestInterceptor {
 
     const ignoredMethods = ['GET'];
     if (ignoredMethods.includes(method.toUpperCase())) {
+      return next.handle();
+    }
+
+    const isPublic = this.reflector.get<boolean>('isPublic', context.getHandler());
+    if (isPublic) {
       return next.handle();
     }
 
