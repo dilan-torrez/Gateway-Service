@@ -32,8 +32,6 @@ export class PostgresTransport extends Transport {
       ];
 
       try {
-        console.log('PostgresTransport');
-
         await this.client.query(query, values);
       } catch (error) {
         console.error('Error logging to PostgreSQL:', error);
