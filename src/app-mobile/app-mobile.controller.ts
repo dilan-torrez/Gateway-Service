@@ -200,11 +200,6 @@ export class AppMobileController {
   @ApiResponse({ status: 200, description: 'Mostrar liveness del afiliado de complemento' })
   async ecoComLivenessShow(@Headers('authorization') authorization: string, @Req() req: any) {
     const { affiliateId } = req.user;
-    this.nats.emit('appMobile.record.create', {
-      action: 'ecoComLivenessShow',
-      description: 'Verificar vivencia del afiliado de complemento',
-      metadata: { affiliateId },
-    });
     return await this.nats.firstValue('appMobile.ecoComLivenessShow', {
       authorization,
       affiliateId,
