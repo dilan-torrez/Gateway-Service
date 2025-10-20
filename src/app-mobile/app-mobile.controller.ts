@@ -188,11 +188,6 @@ export class AppMobileController {
   @Get('ecoComLiveness')
   @ApiResponse({ status: 200, description: 'Obtener liveness del afiliado de complemento' })
   async ecoComLiveness(@Headers('authorization') authorization: string, @Req() req: any) {
-    this.nats.emit('appMobile.record.create', {
-      action: 'ecoComLiveness',
-      description: 'Obtener vivencia del afiliado de complemento',
-      metadata: req.user,
-    });
     return await this.nats.firstValue('appMobile.ecoComLiveness', { authorization });
   }
 
@@ -219,11 +214,6 @@ export class AppMobileController {
     },
   })
   async ecoComLivenessStore(@Headers('authorization') authorization: string, @Body() data: any) {
-    this.nats.emit('appMobile.record.create', {
-      action: 'ecoComLivenessStore',
-      description: 'Guardar vivencia del afiliado de complemento',
-      metadata: { device_id: data.device_id, firebase_token: data.firebase_token },
-    });
     return await this.nats.firstValue('appMobile.ecoComLivenessStore', { authorization, data });
   }
 
@@ -315,14 +305,6 @@ export class AppMobileController {
       'Content-Disposition': `attachment; filename="${response.name}"`,
       'Content-Length': pdfBuffer.length,
     });
-    this.nats.emit('appMobile.record.create', {
-      action: 'ecoComEconomicComplementsStore',
-      description: 'Guardar complemento económico',
-      metadata: {
-        eco_com_procedure_id: data.eco_com_procedure_id,
-        cell_phone_number: data.cell_phone_number,
-      },
-    });
     return res.send(pdfBuffer);
   }
   e;
@@ -357,11 +339,6 @@ export class AppMobileController {
     @Headers('authorization') authorization: string,
     @Param('ecoComProcedureId') ecoComProcedureId: string,
   ) {
-    this.nats.emit('appMobile.record.create', {
-      action: 'ecoComProcedure',
-      description: 'Obtener modalidad de complemento del afiliado',
-      metadata: { ecoComProcedureId },
-    });
     return await this.nats.firstValue('appMobile.ecoComProcedure', {
       authorization,
       ecoComProcedureId,
@@ -392,11 +369,6 @@ export class AppMobileController {
     @Body() data: any,
     @Req() req: any,
   ) {
-    this.nats.emit('appMobile.record.create', {
-      action: 'ecoComSaveIdentity',
-      description: 'Guardar identidad del afiliado de complemento',
-      metadata: req.user,
-    });
     return await this.nats.firstValue('pvtBe.ecoComSaveIdentity', { authorization, data });
   }
 }
