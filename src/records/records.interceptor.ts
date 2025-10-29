@@ -30,9 +30,10 @@ export class Records implements NestInterceptor {
 
   public sanitizeMetadata(
     metadata: Record<string, any>,
-    maxLength = 100,
+    maxLength = 50,
     excludeKeys: string[] = ['message'],
-    sensitiveKeys: string[] = ['password', 'pass', 'wsqFingerprints'],
+    sensitiveKeys: string[] = ['password', 'pass', 'wsqFingerprints', 'attachments'],
+    neverTruncate = ['affiliateId', 'username', 'tokenId'],
   ): Record<string, any> {
     const result: Record<string, any> = {};
 
@@ -50,7 +51,6 @@ export class Records implements NestInterceptor {
       }
 
       if (typeof value === 'string') {
-        const neverTruncate = ['affiliateId', 'username', 'tokenId'];
 
         if (neverTruncate.includes(key)) {
           result[key] = value;
@@ -64,7 +64,7 @@ export class Records implements NestInterceptor {
 
         result[key] = this.truncate(value, maxLength);
       } else if (Array.isArray(value)) {
-        const maxShow = 50;
+        const maxShow = 10;
 
         if (value.length > maxShow) {
           result[key] = `<len:${value.length}>`;
