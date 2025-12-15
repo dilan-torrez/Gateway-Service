@@ -30,7 +30,7 @@ export class CitizenshipDigitalService {
       params.append('code_verifier', codeVerifier);
       params.append('code', code);
       params.append('client_id', this.credentials.clientId);
-      const tokenResponse = await firstValueFrom(numeroCI
+      const tokenResponse = await firstValueFrom(
         this.httpService.post(tokenUrl, params.toString(), {
           headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         }),
