@@ -2,7 +2,14 @@ import { Controller, Post, UploadedFile, UseInterceptors, Body, UseGuards } from
 import { MessagePattern } from '@nestjs/microservices';
 import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { WhatsappService, SmsService, FtpService, SmsDto, WhatsappDto } from 'src/common';
+import {
+  WhatsappService,
+  SmsService,
+  FtpService,
+  CitizenshipDigitalService,
+  SmsDto,
+  WhatsappDto,
+} from 'src/common';
 import { AuthGuard } from 'src/auth/guards';
 
 @ApiTags('common')
@@ -12,6 +19,7 @@ export class CommonController {
     private readonly ftp: FtpService,
     private readonly sms: SmsService,
     private readonly whatsapp: WhatsappService,
+    private readonly citizenshipDigital: CitizenshipDigitalService,
   ) {}
 
   @MessagePattern('ftp.listFiles')
@@ -85,5 +93,15 @@ export class CommonController {
   @MessagePattern('whatsapp.send')
   async whatsappSms(data: WhatsappDto) {
     return await this.whatsapp.send(data);
+  }
+
+  @MessagePattern('citizenshipDigital.credentials')
+  async citizenshipDigitalCredentials() {
+    return await this.citizenshipDigital.citizenshipDigitalCredentials();
+  }
+
+  @MessagePattern('citizenshipDigital.findPerson')
+  async findPerson(data: any) {
+    return await this.citizenshipDigital.findPerson(data);
   }
 }
