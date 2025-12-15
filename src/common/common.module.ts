@@ -1,7 +1,14 @@
 import { Global, Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import { NATS_SERVICE, NastEnvs } from 'src/config';
-import { NatsService, RecordService, FtpService, SmsService, WhatsappService } from 'src/common';
+import {
+  NatsService,
+  RecordService,
+  FtpService,
+  SmsService,
+  WhatsappService,
+  CitizenshipDigitalService,
+} from 'src/common';
 import { auditLogger } from 'src/config/winston-audit-logger';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import { CommonController } from './common.controller';
@@ -28,8 +35,18 @@ import { HttpModule } from '@nestjs/axios';
     FtpService,
     SmsService,
     WhatsappService,
+    CitizenshipDigitalService,
     { provide: WINSTON_MODULE_PROVIDER, useValue: auditLogger },
   ],
-  exports: [ClientsModule, NatsService, RecordService, FtpService, SmsService, WhatsappService, HttpModule],
+  exports: [
+    ClientsModule,
+    NatsService,
+    RecordService,
+    FtpService,
+    SmsService,
+    WhatsappService,
+    CitizenshipDigitalService,
+    HttpModule,
+  ],
 })
 export class CommonModule {}

@@ -31,6 +31,11 @@ interface EnvVars {
   SMS_PROVIDER: string;
 
   WHATSAPP_SERVER_URL: string;
+
+  CITIZENSHIP_DIGITAL_CLIENT_URL: string;
+  CITIZENSHIP_DIGITAL_CLIENT_ID: string;
+  CITIZENSHIP_DIGITAL_REDIRECT_URI: string;
+  CITIZENSHIP_DIGITAL_SCOPES: string;
 }
 
 const envsSchema = joi
@@ -53,6 +58,11 @@ const envsSchema = joi
     SMS_PROVIDER: joi.string(),
 
     WHATSAPP_SERVER_URL: joi.string(),
+
+    CITIZENSHIP_DIGITAL_CLIENT_URL: joi.string(),
+    CITIZENSHIP_DIGITAL_CLIENT_ID: joi.string(),
+    CITIZENSHIP_DIGITAL_REDIRECT_URI: joi.string(),
+    CITIZENSHIP_DIGITAL_SCOPES: joi.string(),
 
     PVT_API_SERVER: joi.string(),
     PVT_HASH_SECRET: joi.string(),
@@ -121,4 +131,11 @@ export const smsEnvs = {
 
 export const whatsappEnvs = {
   whatsappServerUrl: envVars.WHATSAPP_SERVER_URL,
+};
+
+export const citizenshipDigitalEnvs = {
+  clientUrl: envVars.CITIZENSHIP_DIGITAL_CLIENT_URL,
+  clientId: envVars.CITIZENSHIP_DIGITAL_CLIENT_ID,
+  redirectUri: envVars.CITIZENSHIP_DIGITAL_REDIRECT_URI,
+  scopes: envVars.CITIZENSHIP_DIGITAL_SCOPES,
 };
