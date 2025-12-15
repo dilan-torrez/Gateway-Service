@@ -14,7 +14,7 @@ import { Response } from 'express';
 import { AuthAppMobileGuard } from 'src/auth/guards';
 import { NatsService } from 'src/common';
 import { Records } from 'src/records/records.interceptor';
-import { LoginUserDto } from './dto';
+import { LoginUserDto, LoginAppMobileDto } from './dto';
 import { CurrentUser } from './interfaces/current-user.interface';
 
 @ApiTags('auth')
@@ -87,12 +87,15 @@ export class AuthController {
         signature: { type: 'string', example: 'firma' },
         firebaseToken: { type: 'string', example: 'token' },
         isBiometric: { type: 'boolean', example: 'true' },
+        isCitizenshipDigital: { type: 'boolean', example: 'false' },
+        citizenshipDigitalCode: { type: 'string', example: '1234' },
+        citizenshipDigitalCodeVerifier: { type: 'string', example: '1234' },
         isRegisterCellphone: { type: 'boolean', example: 'false' },
       },
     },
   })
   @Post('loginAppMobile')
-  async loginAppMobile(@Body() body: any) {
+  async loginAppMobile(@Body() body: LoginAppMobileDto) {
     return await this.nats.firstValue('auth.loginAppMobile', body);
   }
 
@@ -118,5 +121,10 @@ export class AuthController {
   @UseGuards(AuthAppMobileGuard)
   async logoutAppMobile(@Req() req: any) {
     return await this.nats.firstValue('auth.logoutAppMobile', req.user);
+  }
+
+  @Get('credentialsCitizenshipDigital')
+  async credentialsCitizenshipDigital() {
+    return await this.nats.firstValue('auth.credentialsCitizenshipDigital', {});
   }
 }
