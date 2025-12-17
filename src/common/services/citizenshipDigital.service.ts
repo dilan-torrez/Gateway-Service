@@ -80,7 +80,7 @@ export class CitizenshipDigitalService {
         firstName: names[0],
         secondName: names.length > 1 ? names[1] : '',
         lastName: getPerson.data.profile.nombre.primer_apellido,
-        secondLastName: getPerson.data.profile.nombre.segundo_apellido,
+        mothersLastName: getPerson.data.profile.nombre.segundo_apellido,
         birthDate: getPerson.data.fecha_nacimiento,
         email: getPerson.data.email,
         cellphone: getPerson.data.celular
