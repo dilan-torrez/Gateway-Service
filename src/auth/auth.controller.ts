@@ -14,7 +14,7 @@ import { Response } from 'express';
 import { AuthAppMobileGuard } from 'src/auth/guards';
 import { NatsService } from 'src/common';
 import { Records } from 'src/records/records.interceptor';
-import { LoginUserDto } from './dto';
+import { LoginUserDto, LoginAppMobileDto } from './dto';
 import { CurrentUser } from './interfaces/current-user.interface';
 
 @ApiTags('auth')
@@ -38,22 +38,28 @@ export class AuthController {
     @Body() loginUserDto: LoginUserDto,
     @Res({ passthrough: true }) res: Response,
   ): Promise<any> {
-    const data: CurrentUser = await this.nats.firstValue('auth.login', loginUserDto);
+    try {
+      const data: CurrentUser = await this.nats.firstValue('auth.login', loginUserDto);
+      const timeShort = 4;
+      const oneHourMiliseconds = 3600000;
 
-    const timeShort = 4;
-    const oneHourMiliseconds = 3600000;
+      res.cookie('msp', data.access_token, {
+        path: '/',
+        httpOnly: true,
+        sameSite: 'strict',
+        expires: new Date(Date.now() + timeShort * oneHourMiliseconds),
+      });
 
-    res.cookie('msp', data.access_token, {
-      path: '/',
-      httpOnly: true,
-      sameSite: 'strict',
-      expires: new Date(Date.now() + timeShort * oneHourMiliseconds),
-    });
-
-    return {
-      message: 'Login successful',
-      user: data.user,
-    };
+      return {
+        message: 'Login successful',
+        user: data.user,
+      };
+    } catch (error) {
+      return {
+        error: true,
+        message: 'Credenciales inválidas',
+      };
+    }
   }
 
   @ApiOperation({ summary: 'Auth Web - logout' })
@@ -76,16 +82,20 @@ export class AuthController {
       type: 'object',
       properties: {
         username: { type: 'string', example: 'numeroCI' },
+        countryCode: { type: 'string', example: '+591' },
         cellphone: { type: 'string', example: '71931166' },
         signature: { type: 'string', example: 'firma' },
         firebaseToken: { type: 'string', example: 'token' },
         isBiometric: { type: 'boolean', example: 'true' },
+        isCitizenshipDigital: { type: 'boolean', example: 'false' },
+        citizenshipDigitalCode: { type: 'string', example: '1234' },
+        citizenshipDigitalCodeVerifier: { type: 'string', example: '1234' },
         isRegisterCellphone: { type: 'boolean', example: 'false' },
       },
     },
   })
   @Post('loginAppMobile')
-  async loginAppMobile(@Body() body: any) {
+  async loginAppMobile(@Body() body: LoginAppMobileDto) {
     return await this.nats.firstValue('auth.loginAppMobile', body);
   }
 
@@ -111,5 +121,10 @@ export class AuthController {
   @UseGuards(AuthAppMobileGuard)
   async logoutAppMobile(@Req() req: any) {
     return await this.nats.firstValue('auth.logoutAppMobile', req.user);
+  }
+
+  @Get('credentialsCitizenshipDigital')
+  async credentialsCitizenshipDigital() {
+    return await this.nats.firstValue('auth.credentialsCitizenshipDigital', {});
   }
 }
