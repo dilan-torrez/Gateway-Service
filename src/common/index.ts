@@ -8,3 +8,4 @@ export { SmsService } from './services/sms.service';
 export { WhatsappService } from './services/whatsapp.service';
 
 export { CitizenshipDigitalService } from './services/citizenshipDigital.service';
+export { BcbService } from './services/bcb.service';

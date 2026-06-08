@@ -1,4 +1,4 @@
-import { Controller, Post, UploadedFile, UseInterceptors, Body, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, UploadedFile, UseInterceptors, Body, UseGuards, Param } from '@nestjs/common';
 import { MessagePattern } from '@nestjs/microservices';
 import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -7,6 +7,7 @@ import {
   SmsService,
   FtpService,
   CitizenshipDigitalService,
+  BcbService,
   SmsDto,
   WhatsappDto,
 } from 'src/common';
@@ -20,6 +21,7 @@ export class CommonController {
     private readonly sms: SmsService,
     private readonly whatsapp: WhatsappService,
     private readonly citizenshipDigital: CitizenshipDigitalService,
+    private readonly bcbService: BcbService,
   ) {}
 
   @MessagePattern('ftp.listFiles')
@@ -103,5 +105,150 @@ export class CommonController {
   @MessagePattern('citizenshipDigital.findPerson')
   async findPerson(data: any) {
     return await this.citizenshipDigital.findPerson(data);
+  }
+
+  @Post('bcb.generateQr')
+  @ApiOperation({ summary: 'Generar QR' })
+  @ApiBody({
+    description: 'Datos para generación de QR / operación BCB',
+    required: true,
+    schema: {
+      type: 'object',
+      properties: {
+        titularDestinatario: {
+          type: 'string',
+          example: 'titularDestinatario',
+        },
+        ciNitDestinatario: {
+          type: 'string',
+          example: '1111111111',
+        },
+        eif: {
+          type: 'string',
+          example: 'MLD10000',
+        },
+        cuentaDestino: {
+          type: 'string',
+          example: '130008101400001',
+        },
+        cuentaDestinoDistribucion: {
+          type: 'object',
+          additionalProperties: {
+            type: 'number',
+            format: 'float',
+          },
+          example: {
+            '130008101400001': 20.0,
+          },
+        },
+        codMoneda: {
+          type: 'string',
+          example: 'BOB',
+        },
+        importe: {
+          type: 'number',
+          format: 'float',
+          example: 20.0,
+        },
+        glosa: {
+          type: 'string',
+          example: 'pruebas',
+        },
+        fechaVencimiento: {
+          type: 'string',
+          example: '2025-05-04 01:50:00',
+        },
+        unicoUso: {
+          type: 'boolean',
+          example: true,
+        },
+        codigoServicio: {
+          type: 'string',
+          example: '0',
+        },
+        metaData: {
+          type: 'object',
+          example: {
+            dato_de_prueba: 'dato de prueba',
+            usuario: 'usuario',
+          },
+        },
+      },
+      required: [
+        'titularDestinatario',
+        'ciNitDestinatario',
+        'eif',
+        'cuentaDestino',
+        'importe',
+        'codMoneda',
+      ],
+    },
+  })
+  async generateQr(@Body() data: any) {
+    return await this.bcbService.send('POST', 'v1/qr', data);
+  }
+
+  @Get('bcb.qrStatus/:qrId')
+  async qrStatus(@Param('qrId') qrId: string) {
+    return await this.bcbService.send('GET', `v1/qr/${qrId}`);
+  }
+
+  @ApiBody({
+    description: 'Datos de respuesta del QR procesado',
+    required: true,
+    schema: {
+      type: 'object',
+      properties: {
+        idQR: {
+          type: 'string',
+          example: '10000121715970417000',
+        },
+        idOrdenDestinatario: {
+          type: 'string',
+          example: '145266734545645630',
+        },
+        eif: {
+          type: 'string',
+          example: 'MLD10000',
+        },
+        codMoneda: {
+          type: 'string',
+          example: 'BOB',
+        },
+        importe: {
+          type: 'number',
+          example: 20000,
+        },
+        cuentaOrigen: {
+          type: 'string',
+          example: '233333444',
+        },
+        eifOrigen: {
+          type: 'string',
+          example: 'MLD1014',
+        },
+        estado: {
+          type: 'string',
+          example: 'PROCESADO',
+        },
+        metaData: {
+          type: 'object',
+          example: {
+            key: 'value',
+            otherKey: 123,
+          },
+          additionalProperties: true,
+        },
+      },
+    },
+  })
+  @Post('bcb.notifications')
+  async notifications(){
+    return await this.bcbService.notifications();
+  }
+
+  @Get('bcb.entities')
+  async entities(){
+    return await this.bcbService.notifications();
   }
 }
