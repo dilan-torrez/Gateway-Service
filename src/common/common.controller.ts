@@ -1,5 +1,14 @@
-import { Controller, Get, Post, UploadedFile, UseInterceptors, Body, UseGuards, Param } from '@nestjs/common';
-import { MessagePattern } from '@nestjs/microservices';
+import {
+  Controller,
+  Get,
+  HttpException,
+  Post,
+  UploadedFile,
+  UseInterceptors,
+  Body,
+  UseGuards,
+} from '@nestjs/common';
+import { MessagePattern, Payload } from '@nestjs/microservices';
 import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
@@ -107,92 +116,35 @@ export class CommonController {
     return await this.citizenshipDigital.findPerson(data);
   }
 
-  @Post('bcb.generateQr')
-  @ApiOperation({ summary: 'Generar QR' })
-  @ApiBody({
-    description: 'Datos para generación de QR / operación BCB',
-    required: true,
-    schema: {
-      type: 'object',
-      properties: {
-        titularDestinatario: {
-          type: 'string',
-          example: 'titularDestinatario',
-        },
-        ciNitDestinatario: {
-          type: 'string',
-          example: '1111111111',
-        },
-        eif: {
-          type: 'string',
-          example: 'MLD10000',
-        },
-        cuentaDestino: {
-          type: 'string',
-          example: '130008101400001',
-        },
-        cuentaDestinoDistribucion: {
-          type: 'object',
-          additionalProperties: {
-            type: 'number',
-            format: 'float',
-          },
-          example: {
-            '130008101400001': 20.0,
-          },
-        },
-        codMoneda: {
-          type: 'string',
-          example: 'BOB',
-        },
-        importe: {
-          type: 'number',
-          format: 'float',
-          example: 20.0,
-        },
-        glosa: {
-          type: 'string',
-          example: 'pruebas',
-        },
-        fechaVencimiento: {
-          type: 'string',
-          example: '2025-05-04 01:50:00',
-        },
-        unicoUso: {
-          type: 'boolean',
-          example: true,
-        },
-        codigoServicio: {
-          type: 'string',
-          example: '0',
-        },
-        metaData: {
-          type: 'object',
-          example: {
-            dato_de_prueba: 'dato de prueba',
-            usuario: 'usuario',
-          },
-        },
-      },
-      required: [
-        'titularDestinatario',
-        'ciNitDestinatario',
-        'eif',
-        'cuentaDestino',
-        'importe',
-        'codMoneda',
-      ],
-    },
-  })
-  async generateQr(@Body() data: any) {
-    return await this.bcbService.send('POST', 'v1/qr', data);
+  @MessagePattern('bcb.generateQr')
+  async generateQr(@Payload() data: any) {
+    try {
+      return await this.bcbService.generateQr(data);
+    } catch (error) {
+      return this.buildBcbErrorResponse(error);
+    }
   }
 
-  @Get('bcb.qrStatus/:qrId')
-  async qrStatus(@Param('qrId') qrId: string) {
-    return await this.bcbService.send('GET', `v1/qr/${qrId}`);
+  @MessagePattern('bcb.qrStatus')
+  async qrStatus(@Payload() data: string | { qrId?: string; idQr?: string; idQR?: string }) {
+    try {
+      const qrId = typeof data === 'string' ? data : (data?.qrId ?? data?.idQr ?? data?.idQR);
+      return await this.bcbService.qrStatus(qrId);
+    } catch (error) {
+      return this.buildBcbErrorResponse(error);
+    }
   }
 
+  @MessagePattern('bcb.status')
+  async bcbStatusMessage() {
+    try {
+      return await this.bcbService.status();
+    } catch (error) {
+      return this.buildBcbErrorResponse(error);
+    }
+  }
+
+  @ApiOperation({ summary: 'Recibir notificación BCB' })
   @ApiBody({
     description: 'Datos de respuesta del QR procesado',
     required: true,
@@ -211,6 +163,14 @@ export class CommonController {
           type: 'string',
           example: 'MLD10000',
         },
+        ciNitOriginante: {
+          type: 'string',
+          example: '12345678',
+        },
+        nombreOriginante: {
+          type: 'string',
+          example: 'Juan Perez',
+        },
         codMoneda: {
           type: 'string',
           example: 'BOB',
@@ -227,8 +187,13 @@ export class CommonController {
           type: 'string',
           example: 'MLD1014',
         },
+        tipoNotificacion: {
+          type: 'string',
+          example: 'T1',
+        },
         estado: {
           type: 'string',
+          enum: ['PROCESADO', 'RECHAZADO', 'NO PROCESADO'],
           example: 'PROCESADO',
         },
         metaData: {
@@ -240,15 +205,44 @@ export class CommonController {
           additionalProperties: true,
         },
       },
+      required: ['idQR', 'eif', 'codMoneda', 'estado'],
     },
   })
   @Post('bcb.notifications')
-  async notifications(){
-    return await this.bcbService.notifications();
+  async notifications(@Body() data: any) {
+    return await this.bcbService.notifications(data);
   }
 
   @Get('bcb.entities')
-  async entities(){
-    return await this.bcbService.notifications();
+  @ApiOperation({ summary: 'Obtener datos de entidad BCB' })
+  async entities() {
+    return await this.bcbService.entities();
+  }
+
+  @Get('bcb.status')
+  @ApiOperation({ summary: 'Verificar disponibilidad BCB' })
+  async bcbStatus() {
+    return await this.bcbService.status();
+  }
+
+  private buildBcbErrorResponse(error: any) {
+    const statusCode = error instanceof HttpException ? error.getStatus() : error?.status;
+    const response = error instanceof HttpException ? error.getResponse() : error?.response;
+    const message =
+      typeof response === 'string'
+        ? response
+        : response?.mensaje ||
+          response?.message ||
+          error?.message ||
+          'Error al comunicarse con BCB';
+
+    return {
+      error: true,
+      serviceStatus: false,
+      finalizado: false,
+      statusCode: statusCode ?? 500,
+      message: Array.isArray(message) ? message.join(', ') : message,
+      data: typeof response === 'object' ? response : null,
+    };
   }
 }
