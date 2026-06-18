@@ -4,6 +4,12 @@ import { firstValueFrom } from 'rxjs';
 import * as crypto from 'crypto';
 import { bcbEnvs } from 'src/config/envs';
 
+export enum BcbQrStatus {
+  PROCESADO = 'PROCESADO',
+  RECHAZADO = 'RECHAZADO',
+  NO_PROCESADO = 'NO PROCESADO',
+}
+
 @Injectable()
 export class BcbService {
   private readonly bcbUrl = bcbEnvs.bcbUrl;
@@ -11,7 +17,7 @@ export class BcbService {
   private readonly bcbKeyId = bcbEnvs.bcbKeyId;
   private readonly bcbSecret = bcbEnvs.bcbSecret;
   private readonly bcbToken = bcbEnvs.bcbToken;
-  private readonly validQrStatuses = ['PROCESADO', 'RECHAZADO', 'NO PROCESADO'];
+  private readonly validQrStatuses: string[] = Object.values(BcbQrStatus);
 
   constructor(private readonly httpService: HttpService) {}
 
@@ -76,9 +82,9 @@ export class BcbService {
       statusValidation: {
         isValid: true,
         status: data.estado,
-        isPaid: data.estado === 'PROCESADO',
-        isRejected: data.estado === 'RECHAZADO',
-        isPending: data.estado === 'NO PROCESADO',
+        isPaid: data.estado === BcbQrStatus.PROCESADO,
+        isRejected: data.estado === BcbQrStatus.RECHAZADO,
+        isPending: data.estado === BcbQrStatus.NO_PROCESADO,
         allowedStatuses: this.validQrStatuses,
       },
     };
@@ -284,9 +290,9 @@ export class BcbService {
       qrId: response?.datos?.idQr,
       statuses,
       invalidStatuses,
-      isPaid: statuses.includes('PROCESADO'),
-      isRejected: statuses.includes('RECHAZADO'),
-      isPending: statuses.length === 0 || statuses.includes('NO PROCESADO'),
+      isPaid: statuses.includes(BcbQrStatus.PROCESADO),
+      isRejected: statuses.includes(BcbQrStatus.RECHAZADO),
+      isPending: statuses.length === 0 || statuses.includes(BcbQrStatus.NO_PROCESADO),
       allowedStatuses: this.validQrStatuses,
     };
   }
