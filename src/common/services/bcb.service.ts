@@ -101,6 +101,34 @@ export class BcbService {
     };
   }
 
+  async createAccount(data: any) {
+    const payload = this.normalizeCreateAccountPayload(data);
+    const response = await this.send('POST', 'v1/cuentas', payload);
+
+    this.validateFinalizedResponse(response);
+
+    return {
+      ...response,
+      serviceStatus: true,
+    };
+  }
+
+  async updateAccount(cta: string, data: any) {
+    if (!cta) {
+      throw new BadRequestException('La cuenta cta es obligatoria');
+    }
+
+    const payload = this.normalizeAccountPayload(data);
+    const response = await this.send('PUT', `v1/cuentas/${encodeURIComponent(cta)}`, payload);
+
+    this.validateFinalizedResponse(response);
+
+    return {
+      ...response,
+      serviceStatus: true,
+    };
+  }
+
   async send(method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE', endpoint: string, data?: any) {
     try {
       this.validateConfig();
@@ -262,6 +290,61 @@ export class BcbService {
     }
   }
 
+  private normalizeCreateAccountPayload(data: any) {
+    const payload = this.normalizeAccountPayload(data, true);
+    const missingFields = ['eif', 'eifCuenta', 'ciNitTitular', 'nombreTitular'].filter((field) =>
+      this.isBlank(payload[field]),
+    );
+
+    if (missingFields.length > 0) {
+      throw new BadRequestException({
+        finalizado: false,
+        mensaje: 'Datos de cuenta BCB inválidos',
+        errores: missingFields.map((field) => `${field}: es obligatorio`),
+      });
+    }
+
+    return payload;
+  }
+
+  private normalizeAccountPayload(data: any, useCreateAliases = false) {
+    if (!data || typeof data !== 'object' || Array.isArray(data)) {
+      throw new BadRequestException({
+        finalizado: false,
+        mensaje: 'Datos de cuenta BCB inválidos',
+        errores: ['body: debe ser un objeto JSON'],
+      });
+    }
+
+    const payload = { ...data };
+    const eifCuenta = this.firstNonBlank(
+      data.eifCuenta,
+      data.eif_cuenta,
+      data.accountNumber,
+      useCreateAliases ? data.cta : undefined,
+      useCreateAliases ? data.cuenta : undefined,
+    );
+
+    if (eifCuenta !== undefined) {
+      payload.eifCuenta = String(eifCuenta);
+    }
+
+    delete payload.eif_cuenta;
+    delete payload.accountNumber;
+    delete payload.cta;
+    delete payload.cuenta;
+
+    return payload;
+  }
+
+  private firstNonBlank(...values: any[]) {
+    return values.find((value) => !this.isBlank(value));
+  }
+
+  private isBlank(value: any) {
+    return value === undefined || value === null || String(value).trim() === '';
+  }
+
   private buildUrl(path: string) {
     const baseUrl = this.bcbUrl.replace(/\/+$/, '');
     return path === '/' ? `${baseUrl}/` : `${baseUrl}${path}`;
@@ -275,6 +358,12 @@ export class BcbService {
   private validateFinalizedResponse(response: any) {
     if (response && typeof response === 'object' && response.finalizado === false) {
       throw new HttpException(response, HttpStatus.BAD_GATEWAY);
+    }
+
+    const message = typeof response?.mensaje === 'string' ? response.mensaje.toLowerCase() : '';
+
+    if (message.includes('no autorizado')) {
+      throw new HttpException(response, HttpStatus.FORBIDDEN);
     }
   }
 

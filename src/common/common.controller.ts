@@ -2,7 +2,9 @@ import {
   Controller,
   Get,
   HttpException,
+  Param,
   Post,
+  Put,
   UploadedFile,
   UseInterceptors,
   Body,
@@ -144,6 +146,26 @@ export class CommonController {
     }
   }
 
+  @MessagePattern('bcb.createAccount')
+  async createBcbAccount(@Payload() data: any) {
+    try {
+      return await this.bcbService.createAccount(data);
+    } catch (error) {
+      return this.buildBcbErrorResponse(error);
+    }
+  }
+
+  @MessagePattern('bcb.updateAccount')
+  async updateBcbAccount(@Payload() data: any) {
+    try {
+      const cta = data?.cta ?? data?.cuenta ?? data?.accountNumber;
+      const payload = data?.data ?? data;
+      return await this.bcbService.updateAccount(cta, payload);
+    } catch (error) {
+      return this.buildBcbErrorResponse(error);
+    }
+  }
+
   @ApiOperation({ summary: 'Recibir notificación BCB' })
   @ApiBody({
     description: 'Datos de respuesta del QR procesado',
@@ -217,6 +239,79 @@ export class CommonController {
   @ApiOperation({ summary: 'Obtener datos de entidad BCB' })
   async entities() {
     return await this.bcbService.entities();
+  }
+
+  @Post('bcb.accounts')
+  @ApiOperation({ summary: 'Crear cuenta BCB' })
+  @ApiBody({
+    description:
+      'Datos de la cuenta a registrar en BCB. eifCuenta es la cuenta de la Entidad Financiera; cta es la cuenta transitoria que devuelve BCB.',
+    required: true,
+    schema: {
+      type: 'object',
+      required: ['eif', 'eifCuenta', 'ciNitTitular', 'nombreTitular'],
+      properties: {
+        eif: {
+          type: 'string',
+          example: 'MLD1014',
+        },
+        eifCuenta: {
+          type: 'string',
+          example: '1505651746',
+        },
+        ciNitTitular: {
+          type: 'string',
+          example: '234578021',
+        },
+        nombreTitular: {
+          type: 'string',
+          example: 'DGPRUEBAS',
+        },
+        estado: {
+          type: 'string',
+          example: 'ACTIVO',
+        },
+      },
+      example: {
+        eif: 'MLD1014',
+        eifCuenta: '1505651746',
+        ciNitTitular: '234578021',
+        nombreTitular: 'DGPRUEBAS',
+        estado: 'ACTIVO',
+      },
+    },
+  })
+  async createAccount(@Body() data: any) {
+    try {
+      return await this.bcbService.createAccount(data);
+    } catch (error) {
+      return this.buildBcbErrorResponse(error);
+    }
+  }
+
+  @Put('bcb.accounts/:cta')
+  @ApiOperation({ summary: 'Actualizar cuenta BCB' })
+  @ApiBody({
+    description: 'Datos de la cuenta a actualizar en BCB',
+    required: true,
+    schema: {
+      type: 'object',
+      additionalProperties: true,
+      example: {
+        eif: 'MLD1014',
+        eifCuenta: '1505651746',
+        ciNitTitular: '1001543025',
+        nombreTitular: 'Percy',
+        estado: 'ACTIVO',
+      },
+    },
+  })
+  async updateAccount(@Param('cta') cta: string, @Body() data: any) {
+    try {
+      return await this.bcbService.updateAccount(cta, data);
+    } catch (error) {
+      return this.buildBcbErrorResponse(error);
+    }
   }
 
   @Get('bcb.status')
