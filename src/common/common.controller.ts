@@ -11,7 +11,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
   WhatsappService,
@@ -183,7 +183,7 @@ export class CommonController {
         },
         eif: {
           type: 'string',
-          example: 'MLD10000',
+          example: 'MLD1014',
         },
         ciNitOriginante: {
           type: 'string',
@@ -245,7 +245,7 @@ export class CommonController {
   @ApiOperation({ summary: 'Crear cuenta BCB' })
   @ApiBody({
     description:
-      'Datos de la cuenta a registrar en BCB. eifCuenta es la cuenta de la Entidad Financiera; cta es la cuenta transitoria que devuelve BCB.',
+      'Datos de la cuenta a registrar en BCB. eifCuenta es la cuenta de la Entidad Financiera; cta no se envia en creacion, lo devuelve BCB como cuenta transitoria.',
     required: true,
     schema: {
       type: 'object',
@@ -253,22 +253,28 @@ export class CommonController {
       properties: {
         eif: {
           type: 'string',
+          description: 'Codigo del participante en el MLD de la Entidad Financiera.',
           example: 'MLD1014',
         },
         eifCuenta: {
           type: 'string',
+          description: 'Numero de cuenta de la Entidad Financiera.',
           example: '1505651746',
         },
         ciNitTitular: {
           type: 'string',
+          description: 'Numero de documento o NIT del titular de la cuenta.',
           example: '234578021',
         },
         nombreTitular: {
           type: 'string',
-          example: 'DGPRUEBAS',
+          description: 'Nombre o razon social del titular de la cuenta.',
+          example: 'NAMEPRUEBA',
         },
         estado: {
           type: 'string',
+          description: 'Estado de la cuenta.',
+          enum: ['ACTIVO', 'INACTIVO'],
           example: 'ACTIVO',
         },
       },
@@ -276,7 +282,7 @@ export class CommonController {
         eif: 'MLD1014',
         eifCuenta: '1505651746',
         ciNitTitular: '234578021',
-        nombreTitular: 'DGPRUEBAS',
+        nombreTitular: 'NAMEPRUEBA',
         estado: 'ACTIVO',
       },
     },
@@ -291,17 +297,51 @@ export class CommonController {
 
   @Put('bcb.accounts/:cta')
   @ApiOperation({ summary: 'Actualizar cuenta BCB' })
+  @ApiParam({
+    name: 'cta',
+    required: true,
+    description: 'Cuenta transitoria devuelta por BCB al crear la cuenta.',
+    example: '130008101400006',
+  })
   @ApiBody({
-    description: 'Datos de la cuenta a actualizar en BCB',
+    description:
+      'Datos de la cuenta a actualizar en BCB. cta va en la URL; no debe enviarse en el body.',
     required: true,
     schema: {
       type: 'object',
-      additionalProperties: true,
+      properties: {
+        eif: {
+          type: 'string',
+          description: 'Codigo del participante en el MLD de la Entidad Financiera.',
+          example: 'MLD1014',
+        },
+        eifCuenta: {
+          type: 'string',
+          description: 'Numero de cuenta de la Entidad Financiera.',
+          example: '1505651746',
+        },
+        ciNitTitular: {
+          type: 'string',
+          description: 'Numero de documento o NIT del titular de la cuenta.',
+          example: '234578021',
+        },
+        nombreTitular: {
+          type: 'string',
+          description: 'Nombre o razon social del titular de la cuenta.',
+          example: 'NAMEPRUEBA EDITADO',
+        },
+        estado: {
+          type: 'string',
+          description: 'Estado de la cuenta.',
+          enum: ['ACTIVO', 'INACTIVO'],
+          example: 'ACTIVO',
+        },
+      },
       example: {
         eif: 'MLD1014',
         eifCuenta: '1505651746',
-        ciNitTitular: '1001543025',
-        nombreTitular: 'Percy',
+        ciNitTitular: '234578021',
+        nombreTitular: 'NAMEPRUEBA EDITADO',
         estado: 'ACTIVO',
       },
     },
