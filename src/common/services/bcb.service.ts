@@ -17,6 +17,8 @@ export class BcbService {
   private readonly bcbKeyId = bcbEnvs.bcbKeyId;
   private readonly bcbSecret = bcbEnvs.bcbSecret;
   private readonly bcbToken = bcbEnvs.bcbToken;
+  private readonly bcbRequestRetries = 2;
+  private readonly bcbRetryDelayMs = 500;
   private readonly validQrStatuses: string[] = Object.values(BcbQrStatus);
 
   constructor(private readonly httpService: HttpService) {}
@@ -179,7 +181,9 @@ export class BcbService {
         transformRequest: [(requestData) => requestData],
       });
 
-      const { data: responseData, status } = await firstValueFrom(response$);
+      const { data: responseData, status } = await this.requestWithRetry(() =>
+        firstValueFrom(response$),
+      );
 
       if (status < 200 || status >= 300) {
         throw new HttpException(responseData || 'BCB respondió con estado HTTP inválido', status);
@@ -237,7 +241,9 @@ export class BcbService {
         timeout: 5000,
       });
 
-      const { data, status } = await firstValueFrom(response$);
+      const { data, status } = await this.requestWithRetry(() =>
+        firstValueFrom(response$),
+      );
 
       if (status === HttpStatus.NOT_FOUND) {
         throw new HttpException(
@@ -421,6 +427,47 @@ export class BcbService {
       );
     }
 
-    throw new HttpException(responseData || 'Error connecting to BCB service', status);
+    throw new HttpException(
+      responseData || error?.message || 'Error connecting to BCB service',
+      status,
+    );
+  }
+
+  private async requestWithRetry<T>(request: () => Promise<T>): Promise<T> {
+    let lastError: any;
+
+    for (let attempt = 0; attempt <= this.bcbRequestRetries; attempt++) {
+      try {
+        return await request();
+      } catch (error) {
+        lastError = error;
+
+        if (!this.isRetryableBcbError(error) || attempt === this.bcbRequestRetries) {
+          throw error;
+        }
+
+        await this.delay(this.bcbRetryDelayMs * (attempt + 1));
+      }
+    }
+
+    throw lastError;
+  }
+
+  private isRetryableBcbError(error: any): boolean {
+    if (error?.response) {
+      return false;
+    }
+
+    return [
+      'ECONNABORTED',
+      'ECONNRESET',
+      'ECONNREFUSED',
+      'EAI_AGAIN',
+      'ETIMEDOUT',
+    ].includes(error?.code);
+  }
+
+  private delay(ms: number): Promise<void> {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
