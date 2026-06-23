@@ -146,6 +146,15 @@ export class CommonController {
     }
   }
 
+  @MessagePattern('bcb.entities')
+  async bcbEntitiesMessage() {
+    try {
+      return await this.bcbService.entities();
+    } catch (error) {
+      return this.buildBcbErrorResponse(error);
+    }
+  }
+
   @MessagePattern('bcb.createAccount')
   async createBcbAccount(@Payload() data: any) {
     try {
