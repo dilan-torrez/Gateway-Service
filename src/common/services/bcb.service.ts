@@ -3,6 +3,7 @@ import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import * as crypto from 'crypto';
 import { bcbEnvs } from 'src/config/envs';
+import { NatsService } from './nats.service';
 
 export enum BcbQrStatus {
   PROCESADO = 'PROCESADO',
@@ -20,8 +21,13 @@ export class BcbService {
   private readonly bcbRequestRetries = 2;
   private readonly bcbRetryDelayMs = 500;
   private readonly validQrStatuses: string[] = Object.values(BcbQrStatus);
+  private readonly unavailableMessage =
+    'Servicio BCB fuera de servicio temporalmente. Intente nuevamente más tarde.';
 
-  constructor(private readonly httpService: HttpService) {}
+  constructor(
+    private readonly httpService: HttpService,
+    private readonly nats: NatsService,
+  ) {}
 
   async status() {
     return await this.checkBcbStatus();
@@ -44,7 +50,12 @@ export class BcbService {
     }
 
     return {
-      ...response,
+      finalizado: response?.finalizado,
+      mensaje: response?.mensaje,
+      datos: {
+        idQr: response.datos.idQr,
+        imagenQr: response.datos.imagenQr,
+      },
       serviceStatus: true,
     };
   }
@@ -89,6 +100,45 @@ export class BcbService {
         isPending: data.estado === BcbQrStatus.NO_PROCESADO,
         allowedStatuses: this.validQrStatuses,
       },
+    };
+  }
+
+  async processPaymentNotification(data: any) {
+    const bcbValidation = await this.notifications(data);
+    const salesResult = await this.nats.firstValue('sales.bcbPaymentNotification', {
+      notification: data,
+      bcbValidation,
+    });
+
+    return {
+      finalizado: !salesResult?.error,
+      mensaje: salesResult?.message ?? bcbValidation.mensaje,
+      datos: data,
+      serviceStatus: !salesResult?.error,
+      bcbValidation,
+      sales: salesResult,
+    };
+  }
+
+  buildErrorResponse(error: any) {
+    const statusCode = error instanceof HttpException ? error.getStatus() : error?.status;
+    const response = error instanceof HttpException ? error.getResponse() : error?.response;
+    const rawMessage =
+      typeof response === 'string'
+        ? response
+        : response?.mensaje ||
+          response?.message ||
+          error?.message ||
+          'Error al comunicarse con BCB';
+    const message = this.normalizeBcbErrorMessage(rawMessage);
+
+    return {
+      error: true,
+      serviceStatus: false,
+      finalizado: false,
+      statusCode: statusCode ?? HttpStatus.INTERNAL_SERVER_ERROR,
+      message,
+      data: typeof response === 'object' ? response : null,
     };
   }
 
@@ -241,9 +291,7 @@ export class BcbService {
         timeout: 5000,
       });
 
-      const { data, status } = await this.requestWithRetry(() =>
-        firstValueFrom(response$),
-      );
+      const { data, status } = await this.requestWithRetry(() => firstValueFrom(response$));
 
       if (status === HttpStatus.NOT_FOUND) {
         throw new HttpException(
@@ -411,11 +459,36 @@ export class BcbService {
 
   private throwBcbHttpError(error: any): never {
     if (error instanceof HttpException) {
+      const status = error.getStatus();
+      const response = error.getResponse();
+      const responseMessage = this.extractBcbErrorMessage(response);
+
+      if (
+        [
+          HttpStatus.BAD_GATEWAY,
+          HttpStatus.SERVICE_UNAVAILABLE,
+          HttpStatus.GATEWAY_TIMEOUT,
+        ].includes(status) ||
+        this.isUnavailableBcbError(error, responseMessage)
+      ) {
+        this.throwUnavailableBcbException(responseMessage);
+      }
+
       throw error;
     }
 
     const status = error?.response?.status || HttpStatus.INTERNAL_SERVER_ERROR;
     const responseData = error?.response?.data;
+    const responseMessage = this.extractBcbErrorMessage(responseData);
+
+    if (
+      [HttpStatus.BAD_GATEWAY, HttpStatus.SERVICE_UNAVAILABLE, HttpStatus.GATEWAY_TIMEOUT].includes(
+        status,
+      ) ||
+      this.isUnavailableBcbError(error, responseMessage)
+    ) {
+      this.throwUnavailableBcbException(responseMessage);
+    }
 
     if (status === HttpStatus.NOT_FOUND) {
       throw new HttpException(
@@ -428,9 +501,72 @@ export class BcbService {
     }
 
     throw new HttpException(
-      responseData || error?.message || 'Error connecting to BCB service',
+      responseData || responseMessage || 'Error connecting to BCB service',
       status,
     );
+  }
+
+  private extractBcbErrorMessage(responseData: any): string | null {
+    if (!responseData) {
+      return null;
+    }
+
+    if (typeof responseData === 'string') {
+      const cleaned = responseData
+        .replace(/<[^>]*>/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      return cleaned || null;
+    }
+
+    return responseData?.mensaje ?? responseData?.message ?? responseData?.error ?? null;
+  }
+
+  private isUnavailableBcbError(error: any, message?: string | null): boolean {
+    const normalizedMessage = String(message ?? error?.message ?? '').toLowerCase();
+
+    return (
+      ['ECONNABORTED', 'ECONNRESET', 'ECONNREFUSED', 'EAI_AGAIN', 'ETIMEDOUT'].includes(
+        error?.code,
+      ) ||
+      normalizedMessage.includes('bad gateway') ||
+      normalizedMessage.includes('service unavailable') ||
+      normalizedMessage.includes('cloudguard waf') ||
+      normalizedMessage.includes('invalid response from the host server')
+    );
+  }
+
+  private throwUnavailableBcbException(detail?: string | null): never {
+    throw new HttpException(
+      {
+        finalizado: false,
+        serviceStatus: false,
+        mensaje: this.unavailableMessage,
+        detalle: detail,
+      },
+      HttpStatus.SERVICE_UNAVAILABLE,
+    );
+  }
+
+  private normalizeBcbErrorMessage(message: any) {
+    const normalized = Array.isArray(message) ? message.join(', ') : String(message ?? '');
+    const cleaned = normalized
+      .replace(/<[^>]*>/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+    const lowerMessage = cleaned.toLowerCase();
+
+    if (
+      lowerMessage.includes('bad gateway') ||
+      lowerMessage.includes('service unavailable') ||
+      lowerMessage.includes('cloudguard waf') ||
+      lowerMessage.includes('invalid response from the host server')
+    ) {
+      return this.unavailableMessage;
+    }
+
+    return cleaned || this.unavailableMessage;
   }
 
   private async requestWithRetry<T>(request: () => Promise<T>): Promise<T> {
@@ -458,13 +594,9 @@ export class BcbService {
       return false;
     }
 
-    return [
-      'ECONNABORTED',
-      'ECONNRESET',
-      'ECONNREFUSED',
-      'EAI_AGAIN',
-      'ETIMEDOUT',
-    ].includes(error?.code);
+    return ['ECONNABORTED', 'ECONNRESET', 'ECONNREFUSED', 'EAI_AGAIN', 'ETIMEDOUT'].includes(
+      error?.code,
+    );
   }
 
   private delay(ms: number): Promise<void> {
