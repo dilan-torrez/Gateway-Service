@@ -1,7 +1,6 @@
 import {
   Controller,
   Get,
-  HttpException,
   Param,
   Post,
   Put,
@@ -123,7 +122,7 @@ export class CommonController {
     try {
       return await this.bcbService.generateQr(data);
     } catch (error) {
-      return this.buildBcbErrorResponse(error);
+      return this.bcbService.buildErrorResponse(error);
     }
   }
 
@@ -133,7 +132,7 @@ export class CommonController {
       const qrId = typeof data === 'string' ? data : (data?.qrId ?? data?.idQr ?? data?.idQR);
       return await this.bcbService.qrStatus(qrId);
     } catch (error) {
-      return this.buildBcbErrorResponse(error);
+      return this.bcbService.buildErrorResponse(error);
     }
   }
 
@@ -142,7 +141,7 @@ export class CommonController {
     try {
       return await this.bcbService.status();
     } catch (error) {
-      return this.buildBcbErrorResponse(error);
+      return this.bcbService.buildErrorResponse(error);
     }
   }
 
@@ -151,7 +150,7 @@ export class CommonController {
     try {
       return await this.bcbService.entities();
     } catch (error) {
-      return this.buildBcbErrorResponse(error);
+      return this.bcbService.buildErrorResponse(error);
     }
   }
 
@@ -160,7 +159,7 @@ export class CommonController {
     try {
       return await this.bcbService.createAccount(data);
     } catch (error) {
-      return this.buildBcbErrorResponse(error);
+      return this.bcbService.buildErrorResponse(error);
     }
   }
 
@@ -171,7 +170,7 @@ export class CommonController {
       const payload = data?.data ?? data;
       return await this.bcbService.updateAccount(cta, payload);
     } catch (error) {
-      return this.buildBcbErrorResponse(error);
+      return this.bcbService.buildErrorResponse(error);
     }
   }
 
@@ -239,15 +238,23 @@ export class CommonController {
       required: ['idQR', 'eif', 'codMoneda', 'estado'],
     },
   })
-  @Post('bcb.notifications')
-  async notifications(@Body() data: any) {
-    return await this.bcbService.notifications(data);
+  @Post('pagos/notificacion/notificacionPago')
+  async paymentNotification(@Body() data: any) {
+    try {
+      return await this.bcbService.processPaymentNotification(data);
+    } catch (error) {
+      return this.bcbService.buildErrorResponse(error);
+    }
   }
 
   @Get('bcb.entities')
   @ApiOperation({ summary: 'Obtener datos de entidad BCB' })
   async entities() {
-    return await this.bcbService.entities();
+    try {
+      return await this.bcbService.entities();
+    } catch (error) {
+      return this.bcbService.buildErrorResponse(error);
+    }
   }
 
   @Post('bcb.accounts')
@@ -300,7 +307,7 @@ export class CommonController {
     try {
       return await this.bcbService.createAccount(data);
     } catch (error) {
-      return this.buildBcbErrorResponse(error);
+      return this.bcbService.buildErrorResponse(error);
     }
   }
 
@@ -359,34 +366,17 @@ export class CommonController {
     try {
       return await this.bcbService.updateAccount(cta, data);
     } catch (error) {
-      return this.buildBcbErrorResponse(error);
+      return this.bcbService.buildErrorResponse(error);
     }
   }
 
   @Get('bcb.status')
   @ApiOperation({ summary: 'Verificar disponibilidad BCB' })
   async bcbStatus() {
-    return await this.bcbService.status();
-  }
-
-  private buildBcbErrorResponse(error: any) {
-    const statusCode = error instanceof HttpException ? error.getStatus() : error?.status;
-    const response = error instanceof HttpException ? error.getResponse() : error?.response;
-    const message =
-      typeof response === 'string'
-        ? response
-        : response?.mensaje ||
-          response?.message ||
-          error?.message ||
-          'Error al comunicarse con BCB';
-
-    return {
-      error: true,
-      serviceStatus: false,
-      finalizado: false,
-      statusCode: statusCode ?? 500,
-      message: Array.isArray(message) ? message.join(', ') : message,
-      data: typeof response === 'object' ? response : null,
-    };
+    try {
+      return await this.bcbService.status();
+    } catch (error) {
+      return this.bcbService.buildErrorResponse(error);
+    }
   }
 }
