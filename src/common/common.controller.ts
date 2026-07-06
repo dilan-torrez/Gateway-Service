@@ -136,6 +136,33 @@ export class CommonController {
     }
   }
 
+  @MessagePattern('bcb.saveQrImageTmp')
+  async saveQrImageTmp(@Payload() data: { qrId: string; qrImage: string; ttlMs?: number }) {
+    try {
+      return await this.bcbService.saveQrImageTmp(data.qrId, data.qrImage, data.ttlMs);
+    } catch (error) {
+      return this.bcbService.buildErrorResponse(error);
+    }
+  }
+
+  @MessagePattern('bcb.getQrImageTmp')
+  async getQrImageTmp(@Payload() data: { qrId: string }) {
+    try {
+      return await this.bcbService.getQrImageTmp(data.qrId);
+    } catch (error) {
+      return this.bcbService.buildErrorResponse(error);
+    }
+  }
+
+  @MessagePattern('bcb.removeQrImageTmp')
+  async removeQrImageTmp(@Payload() data: { qrId: string }) {
+    try {
+      return await this.bcbService.removeQrImageTmp(data.qrId);
+    } catch (error) {
+      return this.bcbService.buildErrorResponse(error);
+    }
+  }
+
   @MessagePattern('bcb.status')
   async bcbStatusMessage() {
     try {

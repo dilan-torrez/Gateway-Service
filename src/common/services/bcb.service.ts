@@ -2,6 +2,8 @@ import { BadRequestException, HttpException, HttpStatus, Injectable } from '@nes
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import * as crypto from 'crypto';
+import * as fs from 'fs';
+import * as servicePath from 'path';
 import { bcbEnvs } from 'src/config/envs';
 import { NatsService } from './nats.service';
 
@@ -20,6 +22,7 @@ export class BcbService {
   private readonly bcbToken = bcbEnvs.bcbToken;
   private readonly bcbRequestRetries = 2;
   private readonly bcbRetryDelayMs = 500;
+  private readonly qrTempDir = '/tmp/temporalqr';
   private readonly validQrStatuses: string[] = Object.values(BcbQrStatus);
   private readonly unavailableMessage =
     'Servicio BCB fuera de servicio temporalmente. Intente nuevamente más tarde.';
@@ -73,6 +76,69 @@ export class BcbService {
       ...response,
       serviceStatus: true,
       statusValidation: this.buildQrStatusValidation(response),
+    };
+  }
+
+  async saveQrImageTmp(qrId: string, qrImage: string, ttlMs = 120000) {
+    if (!qrId || !qrImage) {
+      throw new BadRequestException('El id QR y la imagen QR son obligatorios');
+    }
+
+    const filePath = this.buildQrImageTmpPath(qrId);
+
+    if (!fs.existsSync(this.qrTempDir)) {
+      fs.mkdirSync(this.qrTempDir, { recursive: true });
+    }
+
+    fs.writeFileSync(filePath, JSON.stringify({ qrImage }), 'utf8');
+
+    setTimeout(
+      () => {
+        this.removeQrImageTmpFile(filePath);
+      },
+      Math.max(Number(ttlMs) || 0, 1000),
+    );
+
+    return {
+      statusSaved: true,
+      message: 'QR image tmp saved successfully',
+    };
+  }
+
+  async getQrImageTmp(qrId: string) {
+    if (!qrId) {
+      throw new BadRequestException('El id QR es obligatorio');
+    }
+
+    try {
+      const filePath = this.buildQrImageTmpPath(qrId);
+
+      if (!fs.existsSync(filePath)) {
+        return { qrImage: null };
+      }
+
+      const raw = fs.readFileSync(filePath, 'utf8');
+      const data = JSON.parse(raw);
+      const qrImage = data?.qrImage;
+
+      return {
+        qrImage: typeof qrImage === 'string' ? qrImage : null,
+      };
+    } catch {
+      return { qrImage: null };
+    }
+  }
+
+  async removeQrImageTmp(qrId: string) {
+    if (!qrId) {
+      throw new BadRequestException('El id QR es obligatorio');
+    }
+
+    this.removeQrImageTmpFile(this.buildQrImageTmpPath(qrId));
+
+    return {
+      statusRemoved: true,
+      message: 'QR image tmp removed successfully',
     };
   }
 
@@ -242,6 +308,16 @@ export class BcbService {
       return responseData;
     } catch (error: any) {
       this.throwBcbHttpError(error);
+    }
+  }
+
+  private buildQrImageTmpPath(qrId: string) {
+    return servicePath.join(this.qrTempDir, `${encodeURIComponent(qrId)}.json`);
+  }
+
+  private removeQrImageTmpFile(filePath: string) {
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
     }
   }
 
