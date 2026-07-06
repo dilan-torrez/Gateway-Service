@@ -92,6 +92,11 @@ export class CommonController {
     return await this.ftp.getDataTmp(data.path, data.name);
   }
 
+  @MessagePattern('ftp.removeDataTmp')
+  async removeDataTmp(data: { path: string; name: string }) {
+    return await this.ftp.removeDataTmp(data.path, data.name);
+  }
+
   @MessagePattern('ftp.removeFile')
   async removeFile(data: string[]) {
     return await this.ftp.removeFile(data);
