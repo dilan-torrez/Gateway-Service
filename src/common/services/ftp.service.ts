@@ -245,31 +245,6 @@ export class FtpService {
     }
   }
 
-  async saveDataTmpQr(path: string, name: string, data: Record<string, any>, ttlMs: number) {
-    try {
-      const tempDir = '/tmp/' + path;
-      const filePath = servicePath.join(tempDir, name);
-      const safeTtlMs = Number.isFinite(ttlMs) && ttlMs > 0 ? ttlMs : 120000;
-      if (!fs.existsSync(tempDir)) {
-        fs.mkdirSync(tempDir, { recursive: true });
-      }
-
-      fs.writeFileSync(filePath, JSON.stringify(data), 'utf8');
-
-      this.logger.log(`QR data saved to ${filePath} successfully`);
-      setTimeout(() => {
-        if (fs.existsSync(filePath)) {
-          fs.unlinkSync(filePath);
-          this.logger.log(`QR data removed from ${filePath} successfully`);
-        }
-      }, safeTtlMs);
-      return { statusSaved: true, message: 'QR data saved successfully' };
-    } catch (error) {
-      this.logger.error('Failed to save QR data:', error);
-      throw new Error('Failed to save QR data');
-    }
-  }
-
   async getDataTmp(path: string, name: string) {
     try {
       const tempDir = '/tmp/' + path;

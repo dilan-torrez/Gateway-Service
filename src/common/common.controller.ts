@@ -83,13 +83,8 @@ export class CommonController {
   }
 
   @MessagePattern('ftp.saveDataTmp')
-  async saveDataTmp(data: { path: string; name: string; data: any }) {
-    return await this.ftp.saveDataTmp(data.path, data.name, data.data);
-  }
-
-  @MessagePattern('ftp.saveDataTmpQr')
-  async saveDataTmpQr(data: { path: string; name: string; data: any; ttlMs: number }) {
-    return await this.ftp.saveDataTmpQr(data.path, data.name, data.data, data.ttlMs);
+  async saveDataTmp(data: { path: string; name: string; data: any; ttlMs?: number }) {
+    return await this.ftp.saveDataTmp(data.path, data.name, data.data, data.ttlMs);
   }
 
   @MessagePattern('ftp.getDataTmp')
