@@ -250,7 +250,7 @@ function getSalesReceiptPaymentType(data: SalesReceiptData): string {
 }
 
 function getSalesReceiptBank(data: SalesReceiptData): string {
-  return data.payment.location?.name ?? '';
+  return data.voucher.paymentLocation ?? '';
 }
 
 function getSalesReceiptDate(data: SalesReceiptData): string {

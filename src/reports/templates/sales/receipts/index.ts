@@ -5,7 +5,7 @@ import { SalesReceiptData } from '../../../interfaces/sales/sales-receipt-data.i
 
 type SalesReceiptBuilder = (data: SalesReceiptData) => TDocumentDefinitions;
 
-const defaultSalesReceiptTemplate = 'classic-letter-two-copies';
+const defaultSalesReceiptTemplate = 'institutional-letter-two-copies';
 
 export const salesReceiptTemplates: Record<string, SalesReceiptBuilder> = {
   'classic-letter-two-copies': classicLetterTwoCopiesReceipt,

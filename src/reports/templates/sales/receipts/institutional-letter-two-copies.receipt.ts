@@ -1,7 +1,7 @@
 import { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
 import {
   SalesReceiptData,
-  SalesReceiptProduct,
+  SaleProducts,
 } from '../../../interfaces/sales/sales-receipt-data.interface';
 import { formatSpanishDate } from '../../../utils/report-date.util';
 
@@ -26,11 +26,11 @@ const RECEIPT_PADDING = {
   bottom: 10,
 };
 const RECEIPT_FOOTER_HEIGHT = 58;
+const RECEIPT_FOOTER_TOP_MARGIN = 36;
 const RECEIPT_BODY_HEIGHT = RECEIPT.height - RECEIPT_PADDING.top - RECEIPT_PADDING.bottom;
+const SIGNATURE_BOX_WIDTH = 145;
 
-export function institutionalLetterTwoCopiesReceipt(
-  data: SalesReceiptData,
-): TDocumentDefinitions {
+export function institutionalLetterTwoCopiesReceipt(data: SalesReceiptData): TDocumentDefinitions {
   const receiptX = PAGE.margin;
   const topReceiptY = (HALF_PAGE_HEIGHT - RECEIPT.height) / 2;
   const separatorY = HALF_PAGE_HEIGHT;
@@ -45,27 +45,29 @@ export function institutionalLetterTwoCopiesReceipt(
       color: '#1f2933',
     },
     content: [
-      ({
+      {
         ...buildReceiptCopy(data),
         absolutePosition: { x: receiptX, y: topReceiptY },
-      } as unknown as Content),
-      ({
+      } as unknown as Content,
+      {
         ...buildCutSeparator(CUT_LINE_WIDTH),
         absolutePosition: { x: PAGE.margin, y: separatorY },
-      } as Content),
-      ({
+      } as Content,
+      {
         ...buildReceiptCopy(data),
         absolutePosition: { x: receiptX, y: bottomReceiptY },
-      } as unknown as Content),
+      } as unknown as Content,
     ],
     styles: {
       institution: {
         fontSize: 8,
         bold: true,
+        alignment: 'center',
         color: '#111827',
       },
       institutionSub: {
         fontSize: 8,
+        bold: true,
         color: '#374151',
         alignment: 'center',
       },
@@ -188,7 +190,7 @@ export function institutionalLetterTwoCopiesReceipt(
         color: '#111827',
       },
       signatureName: {
-        fontSize: 8,
+        fontSize: 7,
         alignment: 'center',
         color: '#111827',
       },
@@ -224,6 +226,7 @@ function buildReceiptCopy(data: SalesReceiptData) {
                       buildHeader(data),
                       buildMainInformation(data),
                       buildProductsBlock(data),
+                      buildSignatureBlock(data),
                     ],
                   },
                 ],
@@ -277,11 +280,6 @@ function buildHeader(data: SalesReceiptData) {
                 style: 'title',
                 margin: [0, 3, 0, 0],
               },
-              {
-                text: 'Documento administrativo de venta',
-                style: 'titleSub',
-                margin: [0, 1, 0, 0],
-              },
             ],
           },
           {
@@ -290,11 +288,7 @@ function buildHeader(data: SalesReceiptData) {
             margin: [6, 4, 6, 4],
             stack: [
               {
-                text: 'N°',
-                style: 'saleCodeLabel',
-              },
-              {
-                text: `VEN-${saleCode(data)}`,
+                text: `N° VEN-${saleCode(data)}`,
                 style: 'saleCodeValue',
                 margin: [0, 1, 0, 3],
               },
@@ -372,7 +366,7 @@ function buildProductsBlock(data: SalesReceiptData) {
   const body: unknown[][] = [
     [
       {
-        text: 'NOMBRE DEL SERVICIO',
+        text: 'SERVICIOS',
         style: 'tableHeader',
       },
       {
@@ -423,11 +417,37 @@ function buildProductsBlock(data: SalesReceiptData) {
         },
         layout: productsTableLayout(),
       },
+      buildAmountBlock(data),
     ],
   };
 }
 
-function productRow(product: SalesReceiptProduct) {
+function buildAmountBlock(data: SalesReceiptData) {
+  return {
+    margin: [0, 28.35, 0, 0],
+    columns: [
+      {
+        width: '*',
+        text: '',
+      },
+      {
+        width: 118,
+        stack: [
+          {
+            text: 'IMPORTE',
+            style: 'amountLabel',
+          },
+          {
+            text: money(data.voucher.total, data.currency.symbol),
+            style: 'amountValue',
+          },
+        ],
+      },
+    ],
+  };
+}
+
+function productRow(product: SaleProducts) {
   return [
     {
       text: fallback(product.name),
@@ -448,20 +468,34 @@ function productRow(product: SalesReceiptProduct) {
   ];
 }
 
+function buildSignatureBlock(data: SalesReceiptData) {
+  return {
+    margin: [0, 50, 0, 0],
+    columns: [
+      {
+        width: '*',
+        text: '',
+      },
+      buildSignatureBox('RECEPCIONADO POR', fallback(data.sale.receptionist)),
+      {
+        width: 60,
+        text: '',
+      },
+      buildSignatureBox('PAGADOR', payerName(data)),
+      {
+        width: '*',
+        text: '',
+      },
+    ],
+  };
+}
+
 function buildFooter(data: SalesReceiptData) {
   return {
-    margin: [0, 5, 0, 0],
+    margin: [0, RECEIPT_FOOTER_TOP_MARGIN, 0, 0],
     stack: [
       {
-        margin: [105, 0, 105, 4],
-        columns: [
-          buildSignatureBox('RECEPCIONADO POR', fallback(data.sale.receptionist)),
-          buildSignatureBox('PAGADOR / TITULAR', payerName(data)),
-        ],
-        columnGap: 24,
-      },
-      {
-        margin: [0, 2, 0, 0],
+        margin: [0, 0, 0, 0],
         columns: [
           {
             width: '*',
@@ -477,38 +511,7 @@ function buildFooter(data: SalesReceiptData) {
               },
             ],
           },
-          {
-            width: 118,
-            stack: [
-              {
-                table: {
-                  widths: [118],
-                  body: [
-                    [
-                      {
-                        border: [true, true, true, true],
-                        fillColor: '#ffffff',
-                        margin: [5, 2, 5, 2],
-                        stack: [
-                          {
-                            text: 'IMPORTE',
-                            style: 'amountLabel',
-                          },
-                          {
-                            text: money(data.voucher.total, data.currency.symbol),
-                            style: 'amountValue',
-                          },
-                        ],
-                      },
-                    ],
-                  ],
-                },
-                layout: amountBoxLayout(),
-              },
-            ],
-          },
         ],
-        columnGap: 12,
       },
     ],
   };
@@ -516,22 +519,37 @@ function buildFooter(data: SalesReceiptData) {
 
 function buildSignatureBox(title: string, name: string) {
   return {
-    width: '*',
+    width: SIGNATURE_BOX_WIDTH,
     stack: [
-      {
-        text: '________________________',
-        style: 'signature',
-      },
+      buildSignatureLine(SIGNATURE_BOX_WIDTH),
       {
         text: title,
         style: 'signature',
-        margin: [0, 3, 0, 0],
+        margin: [0, 2, 0, 0],
       },
       {
-        text: name,
+        text: fitSignatureName(name),
         style: 'signatureName',
+        margin: [0, 1, 0, 0],
       },
     ],
+  };
+}
+
+function buildSignatureLine(width: number) {
+  return {
+    canvas: [
+      {
+        type: 'line',
+        x1: 0,
+        y1: 0,
+        x2: width,
+        y2: 0,
+        lineWidth: 0.6,
+        lineColor: '#111827',
+      },
+    ],
+    margin: [0, 0, 0, 3],
   };
 }
 
@@ -569,19 +587,6 @@ function noPaddingLayout() {
   return {
     hLineWidth: () => 0,
     vLineWidth: () => 0,
-    paddingLeft: () => 0,
-    paddingRight: () => 0,
-    paddingTop: () => 0,
-    paddingBottom: () => 0,
-  };
-}
-
-function amountBoxLayout() {
-  return {
-    hLineColor: () => '#111827',
-    vLineColor: () => '#111827',
-    hLineWidth: () => 0.6,
-    vLineWidth: () => 0.6,
     paddingLeft: () => 0,
     paddingRight: () => 0,
     paddingTop: () => 0,
@@ -670,14 +675,14 @@ function paymentType(data: SalesReceiptData): string {
 }
 
 function paymentLocation(data: SalesReceiptData): string {
-  return data.payment.location?.name ?? 'No especificado';
+  return data.voucher.paymentLocation ?? 'No especificado';
 }
 
 function concept(data: SalesReceiptData): string {
   return productsConcept(data.products);
 }
 
-function productsConcept(products: SalesReceiptProduct[]): string {
+function productsConcept(products: SaleProducts[]): string {
   if (!products || products.length === 0) {
     return 'Sin productos registrados';
   }
@@ -769,18 +774,7 @@ function numberToSpanish(value: number): string {
 }
 
 function numberToSpanishUnderMillion(value: number): string {
-  const units = [
-    '',
-    'UNO',
-    'DOS',
-    'TRES',
-    'CUATRO',
-    'CINCO',
-    'SEIS',
-    'SIETE',
-    'OCHO',
-    'NUEVE',
-  ];
+  const units = ['', 'UNO', 'DOS', 'TRES', 'CUATRO', 'CINCO', 'SEIS', 'SIETE', 'OCHO', 'NUEVE'];
 
   const teens = [
     'DIEZ',
@@ -856,14 +850,9 @@ function numberToSpanishUnderMillion(value: number): string {
   if (value < 1000000) {
     const thousands = Math.floor(value / 1000);
     const rest = value % 1000;
-    const prefix =
-      thousands === 1
-        ? 'MIL'
-        : `${numberToSpanishUnderMillion(thousands)} MIL`;
+    const prefix = thousands === 1 ? 'MIL' : `${numberToSpanishUnderMillion(thousands)} MIL`;
 
-    return rest === 0
-      ? prefix
-      : `${prefix} ${numberToSpanishUnderMillion(rest)}`;
+    return rest === 0 ? prefix : `${prefix} ${numberToSpanishUnderMillion(rest)}`;
   }
 
   return String(value);
@@ -885,15 +874,17 @@ function fallback(value: unknown): string {
   return String(value);
 }
 
+function fitSignatureName(value: string): string {
+  const name = fallback(value).replace(/\s+/g, ' ').trim();
+
+  return name.length > 32 ? `${name.slice(0, 29)}...` : name;
+}
+
 function metadataText(data: SalesReceiptData): string {
   const metadata = [
     data.metadata?.source ? `Fuente: ${data.metadata.source}` : null,
-    data.metadata?.generatedFor
-      ? `Generado para: ${data.metadata.generatedFor}`
-      : null,
-    data.metadata?.generatedAt
-      ? `Generado en: ${adminDate(data.metadata.generatedAt)}`
-      : null,
+    data.metadata?.generatedFor ? `Generado para: ${data.metadata.generatedFor}` : null,
+    data.metadata?.generatedAt ? `Generado en: ${adminDate(data.metadata.generatedAt)}` : null,
   ].filter(Boolean);
 
   return metadata.length > 0 ? metadata.join(' | ') : 'Metadata: -';

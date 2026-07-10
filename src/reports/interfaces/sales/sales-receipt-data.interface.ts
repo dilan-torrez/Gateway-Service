@@ -6,7 +6,6 @@ export interface SalesReceiptResponse {
 
 export interface SalesReceiptData {
   sale: {
-    id: number;  // no aparecera en el pdf
     code: string | null;
     state: string;
     personId: number;
@@ -14,11 +13,8 @@ export interface SalesReceiptData {
     createdAt: string | Date;
   };
   principalCustomer: {
-    id: number; // no aparecera en el pdf
     fullName: string;
     identityCard: string;
-    nup: number | null;
-    isPolice: boolean;
   };
   payer: {
     customer: string | null;
@@ -26,31 +22,24 @@ export interface SalesReceiptData {
     isThirdParty: boolean;
   };
   voucher: {
-    id: number; // no aparecera en el pdf
     receiptNumber: string | null;
     description: string | null;
     paymentTypeState: string;
     depositDate: string | Date | null;
+    paymentLocation: string | null;
     createdAt: string | Date;
     total: string;
   };
   payment: {
     type: {
-      id: number; // no aparecera en el pdf
       name: string;
       shortened: string;
-    } | null;
-    location: {
-      id: number; // no aparecera en el pdf
-      name: string;
-      code: string | null;
-      eif: string | null;
     } | null;
   };
   currency: {
     symbol: string | null;
   };
-  products: SalesReceiptProduct[];
+  products: SaleProducts[];
   totals: {
     productCount: number;
     quantity: number;
@@ -63,8 +52,7 @@ export interface SalesReceiptData {
   };
 }
 
-export interface SalesReceiptProduct {
-  id: number; // no aparecera en el pdf
+export interface SaleProducts {
   name: string;
   amount: number;
   price: string;

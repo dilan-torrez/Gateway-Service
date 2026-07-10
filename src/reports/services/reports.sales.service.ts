@@ -13,10 +13,7 @@ export class ReportsSalesService {
     private readonly renderer: PdfmakeRendererService,
   ) {}
 
-  async generateSaleReceipt(
-    saleId: number,
-    templateId?: string,
-  ): Promise<ReportRenderResult> {
+  async generateSaleReceipt(saleId: number, templateId?: string): Promise<ReportRenderResult> {
     const response = (await this.nats.firstValue('sales.personSaleDetails', {
       saleId,
     })) as SalesReceiptResponse;
@@ -46,9 +43,8 @@ export class ReportsSalesService {
 
     const documentDefinition = template(response.data);
     const buffer = await this.renderer.generatePdfBuffer(documentDefinition);
-    const receiptNumber = response.data.voucher.receiptNumber
-      ?? response.data.sale.code
-      ?? String(response.data.sale.id);
+    const receiptNumber =
+      response.data.voucher.receiptNumber ?? response.data.sale.code ?? String(saleId);
 
     return {
       buffer,
