@@ -7,8 +7,8 @@ export interface SalesReportHeaderData {
   generatedBy?: string | null;
   dateFrom?: string | Date | null;
   dateTo?: string | Date | null;
-  institutionName?: string;
-  institutionShortName?: string;
+  institutionName: string;
+  institutionShortName: string;
 }
 
 export interface SalesHeaderPreviewData extends SalesReportHeaderData {
@@ -82,14 +82,14 @@ function buildCenteredTitleBlock(data: SalesReportHeaderData): Content {
   return {
     stack: [
       {
-        text: data.institutionName ?? 'MUTUAL DE SERVICIOS AL POLICIA',
+        text: data.institutionName,
         fontSize: 8,
         bold: true,
         alignment: 'center',
         color: '#111827',
       },
       {
-        text: data.institutionShortName ?? '"MUSERPOL"',
+        text: data.institutionShortName,
         fontSize: 8,
         bold: true,
         alignment: 'center',

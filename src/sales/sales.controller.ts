@@ -1,6 +1,8 @@
 import {
+  BadRequestException,
   Controller,
   Get,
+  NotFoundException,
   Param,
   ParseIntPipe,
   Query,
@@ -16,6 +18,7 @@ import {
 } from '@nestjs/swagger';
 import { Response } from 'express';
 import { NatsService } from 'src/common';
+import { SalesListResponse } from 'src/reports/interfaces/sales/sales-list-data.interface';
 import { ReportsSalesService } from 'src/reports/services/reports.sales.service';
 
 @ApiTags('sales')
@@ -76,14 +79,11 @@ export class SalesController {
     @Query('template') template: string,
     @Res() res: Response,
   ) {
-    const dataSale = (await this.nats.firstValue('sales.personSaleDetails', {
+    const dataSale = await this.nats.firstValue('sales.personSaleDetails', {
       saleId,
-    }));
+    });
 
-    const receipt = await this.reportsSalesService.renderSaleReceipt(
-      dataSale.data,
-      template,
-    );
+    const receipt = await this.reportsSalesService.renderSaleReceipt(dataSale.data, template);
 
     res.set({
       'Content-Type': receipt.contentType,
@@ -91,6 +91,77 @@ export class SalesController {
       'Content-Length': receipt.buffer.length,
     });
 
+    res.send(receipt.buffer);
+  }
+
+  @Get('reports/sales-list') // recibiremos dos entradas obligatorias q son las fechas
+  @ApiOperation({ summary: 'Generar lista de ventas en PDF' })
+  @ApiQuery({
+    name: 'dateFrom',
+    required: true,
+    example: '2026-07-01',
+  })
+  @ApiQuery({
+    name: 'dateTo',
+    required: true,
+    example: '2026-07-13',
+  })
+  @ApiQuery({
+    name: 'template',
+    required: false,
+    enum: ['ventasFormal'],
+    example: 'ventasFormal',
+  })
+  @ApiProduces('application/pdf')
+  @ApiResponse({
+    status: 200,
+    description: 'PDF de la lista de ventas',
+    schema: {
+      type: 'string',
+      format: 'binary',
+    },
+  })
+  async salesList(
+    @Query('dateFrom') dateFrom: string,
+    @Query('dateTo') dateTo: string,
+    @Query('template') template: string,
+    @Res() res: Response,
+  ) {
+    if (!dateFrom || !dateTo) {
+      throw new BadRequestException({
+        error: true,
+        message: 'Debe enviar dateFrom y dateTo para generar el reporte.',
+      });
+    }
+
+    const dataSale = (await this.nats.firstValue('sales.list', {
+      dateFrom,
+      dateTo,
+    })) as SalesListResponse;
+
+    if (dataSale?.error) {
+      throw new BadRequestException({
+        error: true,
+        message: dataSale.message,
+      });
+    }
+
+    if (!dataSale?.data) {
+      throw new NotFoundException({
+        error: true,
+        message: 'No se encontraron datos para generar el reporte de ventas.',
+      });
+    }
+
+    const receipt = await this.reportsSalesService.renderSalesList(dataSale.data, template);
+
+    res.set({
+      'Content-Type': receipt.contentType,
+      'Content-Disposition': `${receipt.disposition}; filename="${receipt.fileName}"`,
+      'Content-Length': receipt.buffer.length,
+    });
+
+    
     res.send(receipt.buffer);
   }
 }

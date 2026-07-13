@@ -1,10 +1,12 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { ReportRenderResult } from '../interfaces/common/report-render-result.interface';
+import { SalesListData } from '../interfaces/sales/sales-list-data.interface';
 import { SalesReceiptData } from '../interfaces/sales/sales-receipt-data.interface';
 import { PdfmakeRendererService } from '../renderer/pdfmake-renderer.service';
 import { buildSalesHeaderPreview, SalesHeaderPreviewData } from '../templates/sales/cabeceras';
+import { findSalesListTemplate } from '../templates/sales/lists';
 import { findSalesReceiptTemplate } from '../templates/sales/receipts';
-import { buildReceiptFileName } from '../utils/report-file-name.util';
+import { buildReceiptFileName, buildSalesListFileName } from '../utils/report-file-name.util';
 
 @Injectable()
 export class ReportsSalesService {
@@ -12,6 +14,8 @@ export class ReportsSalesService {
 
   async generateSalesHeaderPreview(): Promise<ReportRenderResult> {
     const previewData: SalesHeaderPreviewData = {
+      institutionName: 'MUTUAL DE SERVICIOS AL POLICIA',
+      institutionShortName: 'MUSERPOL',
       title: 'REPORTE GENERAL DE VENTAS',
       generatedAt: new Date(),
       generatedBy: 'dgbautista',
@@ -54,6 +58,27 @@ export class ReportsSalesService {
     return {
       buffer,
       fileName: buildReceiptFileName(receiptNumber),
+      contentType: 'application/pdf',
+      disposition: 'inline',
+    };
+  }
+
+  async renderSalesList(data: SalesListData, templateId?: string): Promise<ReportRenderResult> {
+    const template = findSalesListTemplate(templateId);
+
+    if (!template) {
+      throw new BadRequestException({
+        error: true,
+        message: 'La plantilla solicitada para el reporte de ventas no existe.',
+      });
+    }
+
+    const documentDefinition = template(data);
+    const buffer = await this.pdfMake.generatePdfBuffer(documentDefinition);
+
+    return {
+      buffer,
+      fileName: buildSalesListFileName(data.filters.dateFrom, data.filters.dateTo),
       contentType: 'application/pdf',
       disposition: 'inline',
     };
