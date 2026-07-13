@@ -2,7 +2,7 @@ import { TDocumentDefinitions } from 'pdfmake/interfaces';
 import { SalesReceiptData } from '../../../interfaces/sales/sales-receipt-data.interface';
 import { formatSpanishDate } from '../../../utils/report-date.util';
 
-export function classicLetterTwoCopiesReceipt(data: SalesReceiptData): TDocumentDefinitions {
+export function reciboPrueba(data: SalesReceiptData): TDocumentDefinitions {
   const pageWidth = 564;
   const receiptHeight = 360;
   const separatorHeight = 24;
