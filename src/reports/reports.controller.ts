@@ -1,37 +1,26 @@
-import { Controller, Get, Param, ParseIntPipe, Query, Res, UseGuards } from '@nestjs/common';
-import { ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { Controller, Get, Res } from '@nestjs/common';
+import { ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
-import { AuthGuard } from 'src/auth/guards';
 import { ReportsSalesService } from './services/reports.sales.service';
 
-@ApiTags('sales-reports')
-@Controller('sales')
+@ApiTags('reports')
+@Controller('reports')
 export class ReportsController {
   constructor(private readonly reportsSalesService: ReportsSalesService) {}
 
-  @Get(':saleId/receipt')
-  @ApiOperation({ summary: 'Generar recibo oficial de venta en PDF' })
-  @ApiParam({ name: 'saleId', type: Number, example: 1 })
-  @ApiQuery({
-    name: 'template',
-    required: false,
-    enum: ['classic-letter-two-copies', 'institutional-letter-two-copies'],
-    example: 'classic-letter-two-copies',
-  })
-  @ApiResponse({ status: 200, description: 'PDF del recibo oficial' })
-  async saleReceipt(
-    @Param('saleId', ParseIntPipe) saleId: number,
-    @Query('template') template: string | undefined,
-    @Res() res: Response,
-  ) {
-    const receipt = await this.reportsSalesService.generateSaleReceipt(saleId, template);
+  // Por analizar
+  @Get('headers/preview')
+  @ApiOperation({ summary: 'Vista previa de cabecera reutilizable de ventas' })
+  @ApiResponse({ status: 200, description: 'PDF de vista previa de cabecera' })
+  async salesHeaderPreview(@Res() res: Response) {
+    const preview = await this.reportsSalesService.generateSalesHeaderPreview();
 
     res.set({
-      'Content-Type': receipt.contentType,
-      'Content-Disposition': `${receipt.disposition}; filename="${receipt.fileName}"`,
-      'Content-Length': receipt.buffer.length,
+      'Content-Type': preview.contentType,
+      'Content-Disposition': `${preview.disposition}; filename="${preview.fileName}"`,
+      'Content-Length': preview.buffer.length,
     });
 
-    res.send(receipt.buffer);
+    res.send(preview.buffer);
   }
 }

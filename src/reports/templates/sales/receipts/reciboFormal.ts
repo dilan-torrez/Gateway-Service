@@ -30,7 +30,7 @@ const RECEIPT_FOOTER_TOP_MARGIN = 36;
 const RECEIPT_BODY_HEIGHT = RECEIPT.height - RECEIPT_PADDING.top - RECEIPT_PADDING.bottom;
 const SIGNATURE_BOX_WIDTH = 145;
 
-export function institutionalLetterTwoCopiesReceipt(data: SalesReceiptData): TDocumentDefinitions {
+export function reciboFormal(data: SalesReceiptData): TDocumentDefinitions {
   const receiptX = PAGE.margin;
   const topReceiptY = (HALF_PAGE_HEIGHT - RECEIPT.height) / 2;
   const separatorY = HALF_PAGE_HEIGHT;
@@ -676,10 +676,6 @@ function paymentType(data: SalesReceiptData): string {
 
 function paymentLocation(data: SalesReceiptData): string {
   return data.voucher.paymentLocation ?? 'No especificado';
-}
-
-function concept(data: SalesReceiptData): string {
-  return productsConcept(data.products);
 }
 
 function productsConcept(products: SaleProducts[]): string {

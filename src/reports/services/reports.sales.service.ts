@@ -1,37 +1,40 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
-import { NatsService } from 'src/common/services/nats.service';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { ReportRenderResult } from '../interfaces/common/report-render-result.interface';
-import { SalesReceiptResponse } from '../interfaces/sales/sales-receipt-data.interface';
+import { SalesReceiptData } from '../interfaces/sales/sales-receipt-data.interface';
 import { PdfmakeRendererService } from '../renderer/pdfmake-renderer.service';
+import { buildSalesHeaderPreview, SalesHeaderPreviewData } from '../templates/sales/cabeceras';
 import { findSalesReceiptTemplate } from '../templates/sales/receipts';
 import { buildReceiptFileName } from '../utils/report-file-name.util';
 
 @Injectable()
 export class ReportsSalesService {
-  constructor(
-    private readonly nats: NatsService,
-    private readonly renderer: PdfmakeRendererService,
-  ) {}
+  constructor(private readonly pdfMake: PdfmakeRendererService) {}
 
-  async generateSaleReceipt(saleId: number, templateId?: string): Promise<ReportRenderResult> {
-    const response = (await this.nats.firstValue('sales.personSaleDetails', {
-      saleId,
-    })) as SalesReceiptResponse;
+  async generateSalesHeaderPreview(): Promise<ReportRenderResult> {
+    const previewData: SalesHeaderPreviewData = {
+      title: 'REPORTE GENERAL DE VENTAS',
+      generatedAt: new Date(),
+      generatedBy: 'dgbautista',
+      dateFrom: '2026-07-01T00:00:00-04:00',
+      dateTo: '2026-07-10T23:59:59-04:00',
+      description: 'Vista previa de cabecera reutilizable para reportes de ventas.',
+    };
 
-    if (response?.error) {
-      throw new BadRequestException({
-        error: true,
-        message: response.message,
-      });
-    }
+    const documentDefinition = buildSalesHeaderPreview(previewData);
+    const buffer = await this.pdfMake.generatePdfBuffer(documentDefinition);
 
-    if (!response?.data) {
-      throw new NotFoundException({
-        error: true,
-        message: 'No se encontraron datos para generar el recibo.',
-      });
-    }
+    return {
+      buffer,
+      fileName: 'sales-report-header-preview.pdf',
+      contentType: 'application/pdf',
+      disposition: 'inline',
+    };
+  }
 
+  async renderSaleReceipt(
+    data: SalesReceiptData,
+    templateId?: string,
+  ): Promise<ReportRenderResult> {
     const template = findSalesReceiptTemplate(templateId);
 
     if (!template) {
@@ -41,10 +44,12 @@ export class ReportsSalesService {
       });
     }
 
-    const documentDefinition = template(response.data);
-    const buffer = await this.renderer.generatePdfBuffer(documentDefinition);
-    const receiptNumber =
-      response.data.voucher.receiptNumber ?? response.data.sale.code ?? String(saleId);
+    // Aqui se arma el recibo con los datos de la venta y la plantilla elegida.
+    const documentDefinition = template(data);
+
+    // Aqui se convierte el recibo armado a PDF.
+    const buffer = await this.pdfMake.generatePdfBuffer(documentDefinition);
+    const receiptNumber = data.sale.code;
 
     return {
       buffer,
