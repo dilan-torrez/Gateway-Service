@@ -29,7 +29,7 @@ export class SalesController {
   constructor(
     private readonly nats: NatsService,
     private readonly reportsSalesService: ReportsSalesService,
-  ) {}
+  ) { }
 
   @Get('search/:value/:type')
   @ApiResponse({
@@ -85,7 +85,7 @@ export class SalesController {
       saleId,
     });
 
-    const receipt = await this.reportsSalesService.renderSaleReceipt(dataSale.data, template);
+    const receipt = await this.reportsSalesService.pdfMakeSaleReceipt(dataSale.data, template);
 
     res.set({
       'Content-Type': receipt.contentType,
@@ -111,8 +111,8 @@ export class SalesController {
   @ApiQuery({
     name: 'template',
     required: false,
-    enum: ['ventasFormal'],
-    example: 'ventasFormal',
+    enum: ['reportSales'],
+    example: 'reportSales',
   })
   @ApiProduces('application/pdf')
   @ApiResponse({
@@ -142,7 +142,7 @@ export class SalesController {
       dateTo,
     });
 
-    const receipt = await this.reportsSalesService.renderSalesList(
+    const receipt = await this.reportsSalesService.pdfMakeSalesList(
       {
         ...dataSale.data,
         metadata: {

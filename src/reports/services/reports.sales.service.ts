@@ -10,7 +10,7 @@ import { buildReceiptFileName, buildSalesListFileName } from '../utils/report-fi
 
 @Injectable()
 export class ReportsSalesService {
-  constructor(private readonly pdfMake: PdfmakeRendererService) {}
+  constructor(private readonly pdfMake: PdfmakeRendererService) { }
 
   async generateSalesHeaderPreview(): Promise<ReportRenderResult> {
     const previewData: SalesHeaderPreviewData = {
@@ -35,7 +35,7 @@ export class ReportsSalesService {
     };
   }
 
-  async renderSaleReceipt(
+  async pdfMakeSaleReceipt(
     data: SalesReceiptData,
     templateId?: string,
   ): Promise<ReportRenderResult> {
@@ -63,7 +63,7 @@ export class ReportsSalesService {
     };
   }
 
-  async renderSalesList(data: SalesListData, templateId?: string): Promise<ReportRenderResult> {
+  async pdfMakeSalesList(data: SalesListData, templateId?: string): Promise<ReportRenderResult> {
     const template = findSalesListTemplate(templateId);
 
     if (!template) {
