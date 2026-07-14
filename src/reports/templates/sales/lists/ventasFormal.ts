@@ -150,8 +150,7 @@ function headerCell(text: string) {
   return {
     text,
     style: 'tableHeader',
-    alignment:
-      text === 'CANT.' ? 'center' : text === 'PRECIO' || text === 'TOTAL' ? 'right' : 'left',
+    alignment: 'center',
   };
 }
 
@@ -163,10 +162,10 @@ function rowCells(sale: SalesListItem, index: number) {
     cell(formatDateTime(sale.receptionDate)),
     cell(sale.principalCustomer),
     cell(sale.service),
-    cell(String(sale.amount), 'tableCellCenter'),
-    cell(sale.price, 'tableCellRight'),
+    cell(String(sale.amount)),
+    cell(sale.price),
     cell(sale.paymentType),
-    cell(sale.total, 'tableCellRight'),
+    cell(sale.total),
     cell(sale.receptionist),
   ].map((value) => ({ ...value, fillColor }));
 }
@@ -175,6 +174,7 @@ function cell(text: string | null | undefined, style = 'tableCell') {
   return {
     text: fallback(text),
     style,
+    alignment: 'center',
   };
 }
 
