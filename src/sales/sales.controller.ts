@@ -2,7 +2,6 @@ import {
   BadRequestException,
   Controller,
   Get,
-  NotFoundException,
   Param,
   ParseIntPipe,
   Query,
@@ -18,7 +17,6 @@ import {
 } from '@nestjs/swagger';
 import { Response } from 'express';
 import { NatsService } from 'src/common';
-import { SalesListResponse } from 'src/reports/interfaces/sales/sales-list-data.interface';
 import { ReportsSalesService } from 'src/reports/services/reports.sales.service';
 
 @ApiTags('sales')
@@ -107,6 +105,11 @@ export class SalesController {
     example: '2026-07-13',
   })
   @ApiQuery({
+    name: 'generatedBy',
+    required: true,
+    example: 'dgbautista',
+  })
+  @ApiQuery({
     name: 'template',
     required: false,
     enum: ['ventasFormal'],
@@ -124,36 +127,32 @@ export class SalesController {
   async salesList(
     @Query('dateFrom') dateFrom: string,
     @Query('dateTo') dateTo: string,
+    @Query('generatedBy') generatedBy: string,
     @Query('template') template: string,
     @Res() res: Response,
   ) {
-    if (!dateFrom || !dateTo) {
+    if (!dateFrom || !dateTo || !generatedBy) {
       throw new BadRequestException({
         error: true,
-        message: 'Debe enviar dateFrom y dateTo para generar el reporte.',
+        message: 'Debe enviar dateFrom, dateTo y generatedBy para generar el reporte.',
       });
     }
 
-    const dataSale = (await this.nats.firstValue('sales.list', {
+    const dataSale = await this.nats.firstValue('sales.list', {
       dateFrom,
       dateTo,
-    })) as SalesListResponse;
+    });
 
-    if (dataSale?.error) {
-      throw new BadRequestException({
-        error: true,
-        message: dataSale.message,
-      });
-    }
-
-    if (!dataSale?.data) {
-      throw new NotFoundException({
-        error: true,
-        message: 'No se encontraron datos para generar el reporte de ventas.',
-      });
-    }
-
-    const receipt = await this.reportsSalesService.renderSalesList(dataSale.data, template);
+    const receipt = await this.reportsSalesService.renderSalesList(
+      {
+        ...dataSale.data,
+        metadata: {
+          ...dataSale.data.metadata,
+          generatedBy,
+        },
+      },
+      template,
+    );
 
     res.set({
       'Content-Type': receipt.contentType,
@@ -161,7 +160,6 @@ export class SalesController {
       'Content-Length': receipt.buffer.length,
     });
 
-    
     res.send(receipt.buffer);
   }
 }

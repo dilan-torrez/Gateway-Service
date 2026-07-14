@@ -23,6 +23,7 @@ export interface SalesListData {
     source?: string;
     generatedFor?: string;
     generatedAt?: string;
+    generatedBy?: string;
   };
 }
 

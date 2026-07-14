@@ -6,53 +6,34 @@ export function ventasFormal(data: SalesListData): TDocumentDefinitions {
   return {
     pageSize: 'LETTER',
     pageOrientation: 'landscape',
-    pageMargins: [40, 34, 40, 34],
+    pageMargins: [40, 90, 40, 46],
+    header: () => buildPageHeader(data),
+    footer: (currentPage: number, pageCount: number) =>
+      buildPageFooter(currentPage, pageCount, data),
     defaultStyle: {
       font: 'Helvetica',
       fontSize: 7,
       color: '#111827',
     },
-    content: [
-      buildSalesReportHeader({
-        institutionName: 'MUTUAL DE SERVICIOS AL POLICIA',
-        institutionShortName: 'MUSERPOL',
-        title: 'REPORTE DE VENTAS',
-        generatedAt: data.metadata?.generatedAt ?? new Date(),
-        generatedBy: data.metadata?.source ?? 'Sales-Service',
-        dateFrom: data.filters.dateFrom,
-        dateTo: data.filters.dateTo,
-      }),
-      buildSeparator(),
-      buildSummary(data),
-      buildSalesTable(data.sales),
-    ],
+    content: [buildSalesTable(data.sales)],
     styles: {
-      summaryLabel: {
-        fontSize: 7,
-        bold: true,
-        color: '#374151',
-      },
-      summaryValue: {
-        fontSize: 7,
-        color: '#111827',
-      },
       tableHeader: {
-        fontSize: 6.4,
+        fontSize: 7,
         bold: true,
         color: '#111827',
         fillColor: '#e5e7eb',
       },
       tableCell: {
-        fontSize: 6.2,
+        fontSize: 6.5,
         color: '#111827',
       },
       tableCellCenter: {
-        fontSize: 6.2,
+        fontSize: 6.5,
         alignment: 'center',
         color: '#111827',
       },
       tableCellRight: {
-        fontSize: 6.2,
+        fontSize: 6.5,
         alignment: 'right',
         color: '#111827',
       },
@@ -60,51 +41,58 @@ export function ventasFormal(data: SalesListData): TDocumentDefinitions {
   };
 }
 
-function buildSeparator(): Content {
+function buildPageHeader(data: SalesListData): Content {
   return {
-    margin: [0, 6, 0, 8],
-    canvas: [
-      {
-        type: 'line',
-        x1: 0,
-        y1: 0,
-        x2: 712,
-        y2: 0,
-        lineWidth: 0.5,
-        lineColor: '#d1d5db',
-      },
+    margin: [40, 28, 40, 0],
+    stack: [
+      buildSalesReportHeader({
+        institutionName: 'MUTUAL DE SERVICIOS AL POLICIA',
+        institutionShortName: '"MUSERPOL"',
+        title: 'REPORTE DE VENTAS',
+        generatedAt: data.metadata?.generatedAt ?? new Date(),
+        generatedBy: data.metadata?.generatedBy,
+        dateFrom: data.filters.dateFrom,
+        dateTo: data.filters.dateTo,
+      }),
     ],
   } as Content;
 }
 
-function buildSummary(data: SalesListData): Content {
+function buildPageFooter(currentPage: number, pageCount: number, data: SalesListData): Content {
   return {
-    margin: [0, 0, 0, 8],
+    margin: [40, 12, 40, 0],
     columns: [
       {
         width: '*',
         text: [
-          { text: 'Total registros: ', style: 'summaryLabel' },
-          { text: String(data.totalItems), style: 'summaryValue' },
+          {
+            text: 'Cantidad: ',
+            bold: true,
+          },
+          {
+            text: String(data.totalItems),
+          },
         ],
+        fontSize: 7,
+        color: '#374151',
       },
       {
-        width: 210,
+        width: 120,
+        text: `Página ${currentPage} de ${pageCount}`,
         alignment: 'right',
-        text: [
-          { text: 'Generado: ', style: 'summaryLabel' },
-          { text: formatDateTime(data.metadata?.generatedAt), style: 'summaryValue' },
-        ],
+        fontSize: 7,
+        color: '#374151',
       },
     ],
   } as Content;
 }
 
 function buildSalesTable(sales: SalesListItem[]): Content {
+  // const testRows = multiplyRowsForPreview(sales, 1);
   const body: unknown[][] = [
     [
       headerCell('CODIGO'),
-      headerCell('FECHA Y HORA'),
+      headerCell('FECHA - HORA'),
       headerCell('TITULAR'),
       headerCell('SERVICIO'),
       headerCell('CANT.'),
@@ -154,6 +142,10 @@ function buildSalesTable(sales: SalesListItem[]): Content {
   } as Content;
 }
 
+// function multiplyRowsForPreview(sales: SalesListItem[], times: number): SalesListItem[] {
+//   return Array.from({ length: times }).flatMap(() => sales);
+// }
+
 function headerCell(text: string) {
   return {
     text,
@@ -184,21 +176,6 @@ function cell(text: string | null | undefined, style = 'tableCell') {
     text: fallback(text),
     style,
   };
-}
-
-function formatDate(value: string | Date | null | undefined): string {
-  const date = parseDate(value);
-
-  if (!date) {
-    return '-';
-  }
-
-  return new Intl.DateTimeFormat('es-BO', {
-    timeZone: 'America/La_Paz',
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-  }).format(date);
 }
 
 function formatDateTime(value: string | Date | null | undefined): string {

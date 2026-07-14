@@ -1,5 +1,8 @@
 import { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
 
+const HEADER_BLOCK_HEIGHT = 48;
+const META_TOP_MARGIN = 9;
+
 export interface SalesReportHeaderData {
   title: string;
   logo?: string | null;
@@ -55,25 +58,16 @@ export function buildSalesReportHeader(data: SalesReportHeaderData): Content {
 
   return {
     margin: [0, 0, 0, 8],
-    stack: [
+    columns: [
       {
-        columns: [
-          {
-            width: 78,
-            stack: [buildLogoBlock(data)],
-          },
-          {
-            width: '*',
-            text: '',
-          },
-          buildGeneratedMetaBlock(data, generatedAt),
-        ],
+        width: 170,
+        stack: [buildLogoBlock(data)],
       },
       {
-        relativePosition: { x: 0, y: -48 },
-        margin: [86, 0, 173, 0],
+        width: '*',
         stack: [buildCenteredTitleBlock(data)],
       },
+      buildGeneratedMetaBlock(data, generatedAt),
     ],
   } as Content;
 }
@@ -116,37 +110,60 @@ function buildCenteredTitleBlock(data: SalesReportHeaderData): Content {
 
 function buildGeneratedMetaBlock(data: SalesReportHeaderData, generatedAt: Date): Content {
   return {
-    width: 165,
-    stack: [
+    width: 170,
+    margin: [0, META_TOP_MARGIN, 0, 0],
+    columns: [
       {
-        text: `Fecha: ${formatDate(generatedAt)}`,
-        fontSize: 7,
-        alignment: 'right',
-        color: '#111827',
+        width: '*',
+        text: '',
       },
       {
-        text: `Hora: ${formatTime(generatedAt)}`,
-        fontSize: 7,
-        alignment: 'right',
-        color: '#111827',
-        margin: [0, 2, 0, 0],
-      },
-      {
-        text: `Usuario: ${fallback(data.generatedBy)}`,
-        fontSize: 7,
-        alignment: 'right',
-        color: '#111827',
-        margin: [0, 2, 0, 0],
+        width: 85,
+        table: {
+          widths: [40, 50],
+          body: [
+            metaRow('Fecha:', formatDate(generatedAt)),
+            metaRow('Hora:', formatTime(generatedAt)),
+            metaRow('Usuario:', fallback(data.generatedBy)),
+          ],
+        },
+        layout: {
+          hLineWidth: () => 0,
+          vLineWidth: () => 0,
+          paddingLeft: () => 0,
+          paddingRight: () => 0,
+          paddingTop: () => 0,
+          paddingBottom: () => 2,
+        },
       },
     ],
   } as Content;
+}
+
+function metaRow(label: string, value: string) {
+  return [
+    {
+      text: label,
+      fontSize: 8,
+      bold: true,
+      alignment: 'right',
+      color: '#111827',
+      margin: [0, 0, 4, 0],
+    },
+    {
+      text: value,
+      fontSize: 8,
+      alignment: 'left',
+      color: '#111827',
+    },
+  ];
 }
 
 function buildLogoBlock(data: SalesReportHeaderData): Content {
   if (data.logo) {
     return {
       image: data.logo,
-      width: 62,
+      fit: [62, HEADER_BLOCK_HEIGHT],
       alignment: 'left',
       margin: [0, 0, 0, 0],
     } as Content;
@@ -155,7 +172,7 @@ function buildLogoBlock(data: SalesReportHeaderData): Content {
   return {
     table: {
       widths: [62],
-      heights: [48],
+      heights: [HEADER_BLOCK_HEIGHT],
       body: [
         [
           {
