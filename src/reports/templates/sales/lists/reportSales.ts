@@ -2,7 +2,7 @@ import { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
 import { SalesListData, SalesListItem } from '../../../interfaces/sales/sales-list-data.interface';
 import { buildSalesReportHeader } from '../cabeceras';
 
-export function ventasFormal(data: SalesListData): TDocumentDefinitions {
+export function reportSales(data: SalesListData): TDocumentDefinitions {
   return {
     pageSize: 'LETTER',
     pageOrientation: 'landscape',

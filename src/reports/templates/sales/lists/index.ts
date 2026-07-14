@@ -1,13 +1,13 @@
 import { TDocumentDefinitions } from 'pdfmake/interfaces';
 import { SalesListData } from '../../../interfaces/sales/sales-list-data.interface';
-import { ventasFormal } from './ventasFormal';
+import { reportSales } from './reportSales';
 
 type SalesListBuilder = (data: SalesListData) => TDocumentDefinitions;
 
-const defaultSalesListTemplate = 'ventasFormal';
+const defaultSalesListTemplate = 'reportSales';
 
 export const salesListTemplates: Record<string, SalesListBuilder> = {
-  ventasFormal,
+  reportSales,
 };
 
 export function findSalesListTemplate(templateId?: string): SalesListBuilder | null {
