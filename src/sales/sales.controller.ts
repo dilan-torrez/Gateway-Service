@@ -1,10 +1,13 @@
 import {
+  BadRequestException,
   Controller,
   Get,
   Param,
   ParseIntPipe,
   Query,
+  Req,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiOperation,
@@ -14,11 +17,13 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { NatsService } from 'src/common';
 import { ReportsSalesService } from 'src/reports/services/reports.sales.service';
+import { AuthGuard } from 'src/auth/guards';
 
 @ApiTags('sales')
+@UseGuards(AuthGuard)
 @Controller('sales')
 export class SalesController {
   constructor(
@@ -76,12 +81,75 @@ export class SalesController {
     @Query('template') template: string,
     @Res() res: Response,
   ) {
-    const dataSale = (await this.nats.firstValue('sales.personSaleDetails', {
+    const dataSale = await this.nats.firstValue('sales.personSaleDetails', {
       saleId,
-    }));
+    });
 
-    const receipt = await this.reportsSalesService.renderSaleReceipt(
-      dataSale.data,
+    const receipt = await this.reportsSalesService.renderSaleReceipt(dataSale.data, template);
+
+    res.set({
+      'Content-Type': receipt.contentType,
+      'Content-Disposition': `${receipt.disposition}; filename="${receipt.fileName}"`,
+      'Content-Length': receipt.buffer.length,
+    });
+
+    res.send(receipt.buffer);
+  }
+
+  @Get('reports/sales-list') // recibiremos dos entradas obligatorias q son las fechas
+  @ApiOperation({ summary: 'Generar lista de ventas en PDF' })
+  @ApiQuery({
+    name: 'dateFrom',
+    required: true,
+    example: '2026-07-01',
+  })
+  @ApiQuery({
+    name: 'dateTo',
+    required: true,
+    example: '2026-07-13',
+  })
+  @ApiQuery({
+    name: 'template',
+    required: false,
+    enum: ['ventasFormal'],
+    example: 'ventasFormal',
+  })
+  @ApiProduces('application/pdf')
+  @ApiResponse({
+    status: 200,
+    description: 'PDF de la lista de ventas',
+    schema: {
+      type: 'string',
+      format: 'binary',
+    },
+  })
+  async salesList(
+    @Query('dateFrom') dateFrom: string,
+    @Query('dateTo') dateTo: string,
+    @Query('template') template: string,
+    @Req() req: Request & { user?: { username?: string; name?: string } },
+    @Res() res: Response,
+  ) {
+    if (!dateFrom || !dateTo) {
+      throw new BadRequestException({
+        error: true,
+        message: 'Debe enviar dateFrom y dateTo para generar el reporte.',
+      });
+    }
+
+    const dataSale = await this.nats.firstValue('sales.list', {
+      dateFrom,
+      dateTo,
+    });
+
+    const receipt = await this.reportsSalesService.renderSalesList(
+      {
+        ...dataSale.data,
+        metadata: {
+          ...dataSale.data.metadata,
+          generatedBy: req.user?.username,
+        },
+      },
       template,
     );
 
