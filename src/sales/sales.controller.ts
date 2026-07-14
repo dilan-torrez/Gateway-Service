@@ -5,7 +5,9 @@ import {
   Param,
   ParseIntPipe,
   Query,
+  Req,
   Res,
+  UseGuards,
 } from '@nestjs/common';
 import {
   ApiOperation,
@@ -15,11 +17,13 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
-import { Response } from 'express';
+import { Request, Response } from 'express';
 import { NatsService } from 'src/common';
 import { ReportsSalesService } from 'src/reports/services/reports.sales.service';
+import { AuthGuard } from 'src/auth/guards';
 
 @ApiTags('sales')
+@UseGuards(AuthGuard)
 @Controller('sales')
 export class SalesController {
   constructor(
@@ -105,11 +109,6 @@ export class SalesController {
     example: '2026-07-13',
   })
   @ApiQuery({
-    name: 'generatedBy',
-    required: true,
-    example: 'dgbautista',
-  })
-  @ApiQuery({
     name: 'template',
     required: false,
     enum: ['ventasFormal'],
@@ -127,14 +126,14 @@ export class SalesController {
   async salesList(
     @Query('dateFrom') dateFrom: string,
     @Query('dateTo') dateTo: string,
-    @Query('generatedBy') generatedBy: string,
     @Query('template') template: string,
+    @Req() req: Request & { user?: { username?: string; name?: string } },
     @Res() res: Response,
   ) {
-    if (!dateFrom || !dateTo || !generatedBy) {
+    if (!dateFrom || !dateTo) {
       throw new BadRequestException({
         error: true,
-        message: 'Debe enviar dateFrom, dateTo y generatedBy para generar el reporte.',
+        message: 'Debe enviar dateFrom y dateTo para generar el reporte.',
       });
     }
 
@@ -148,7 +147,7 @@ export class SalesController {
         ...dataSale.data,
         metadata: {
           ...dataSale.data.metadata,
-          generatedBy,
+          generatedBy: req.user?.username,
         },
       },
       template,
