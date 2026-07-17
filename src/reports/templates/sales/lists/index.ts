@@ -7,13 +7,9 @@ type SalesListBuilder = (data: SalesListData) => TDocumentDefinitions;
 const defaultSalesListTemplate = 'reportSales';
 
 export const salesListTemplates: Record<string, SalesListBuilder> = {
-  reportSales,
+  'reportSales': reportSales,
 };
 
-export function findSalesListTemplate(templateId?: string): SalesListBuilder | null {
-  if (!templateId) {
-    return salesListTemplates[defaultSalesListTemplate];
-  }
-
-  return salesListTemplates[templateId] ?? null;
+export function findSalesListTemplate(): SalesListBuilder {
+  return salesListTemplates[defaultSalesListTemplate];
 }

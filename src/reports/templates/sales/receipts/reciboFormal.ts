@@ -1,400 +1,576 @@
-import { Content, TDocumentDefinitions } from 'pdfmake/interfaces';
+import {
+  Content,
+  ContentColumns,
+  TDocumentDefinitions,
+} from "pdfmake/interfaces";
 import {
   SalesReceiptData,
   SaleProducts,
-} from '../../../interfaces/sales/sales-receipt-data.interface';
-import { formatSpanishDate } from '../../../utils/report-date.util';
+} from "../../../interfaces/sales/sales-receipt-data.interface";
+import { formatSpanishDate } from "../../../utils/report-date.util";
 
 const PAGE = {
   width: 612,
   height: 792,
-  margin: 56.7,
+  margin: 36,
 };
 
 const HALF_PAGE_HEIGHT = PAGE.height / 2;
 
 const RECEIPT = {
   width: PAGE.width - PAGE.margin * 2,
+
   height: HALF_PAGE_HEIGHT - PAGE.margin * 2,
 };
 
-const CUT_LINE_WIDTH = PAGE.width - PAGE.margin * 2;
 const RECEIPT_PADDING = {
   left: 14,
-  top: 12,
+  top: 10,
   right: 14,
   bottom: 10,
 };
+
+const RECEIPT_BODY_HEIGHT =
+  RECEIPT.height - RECEIPT_PADDING.top - RECEIPT_PADDING.bottom;
+
 const RECEIPT_FOOTER_HEIGHT = 58;
-const RECEIPT_FOOTER_TOP_MARGIN = 36;
-const RECEIPT_BODY_HEIGHT = RECEIPT.height - RECEIPT_PADDING.top - RECEIPT_PADDING.bottom;
-const SIGNATURE_BOX_WIDTH = 145;
+
+const RECEIPT_MAIN_HEIGHT = RECEIPT_BODY_HEIGHT - RECEIPT_FOOTER_HEIGHT;
+
+const CUT_LINE_WIDTH = PAGE.width - PAGE.margin * 2;
+
+const SIGNATURE_BOX_WIDTH = 168;
+
+const COLORS = {
+  primary: "#4A4A4A",
+  primaryDark: "#1F1F1F",
+  primarySoft: "#E6E6E6",
+  primarySoftAlt: "#F2F2F2",
+
+  text: "#202020",
+  muted: "#666666",
+
+  border: "#C8C8C8",
+  borderStrong: "#8A8A8A",
+
+  white: "#FFFFFF",
+  rowAlternate: "#F5F5F5",
+};
 
 export function reciboFormal(data: SalesReceiptData): TDocumentDefinitions {
   const receiptX = PAGE.margin;
-  const topReceiptY = (HALF_PAGE_HEIGHT - RECEIPT.height) / 2;
-  const separatorY = HALF_PAGE_HEIGHT;
-  const bottomReceiptY = HALF_PAGE_HEIGHT + topReceiptY;
 
-  const documentDefinition: TDocumentDefinitions = {
-    pageSize: 'LETTER',
+  const topReceiptY = PAGE.margin;
+
+  const separatorY = HALF_PAGE_HEIGHT;
+
+  const bottomReceiptY = HALF_PAGE_HEIGHT + PAGE.margin;
+
+  return {
+    pageSize: "LETTER",
+
     pageMargins: [0, 0, 0, 0],
+
     defaultStyle: {
-      font: 'Helvetica',
-      fontSize: 8,
-      color: '#1f2933',
+      font: "Helvetica",
+
+      fontSize: 7,
+
+      color: COLORS.text,
     },
+
     content: [
       {
         ...buildReceiptCopy(data),
-        absolutePosition: { x: receiptX, y: topReceiptY },
+
+        absolutePosition: {
+          x: receiptX,
+
+          y: topReceiptY,
+        },
       } as unknown as Content,
+
       {
         ...buildCutSeparator(CUT_LINE_WIDTH),
-        absolutePosition: { x: PAGE.margin, y: separatorY },
+
+        absolutePosition: {
+          x: PAGE.margin,
+
+          y: separatorY - 4,
+        },
       } as Content,
+
       {
         ...buildReceiptCopy(data),
-        absolutePosition: { x: receiptX, y: bottomReceiptY },
+
+        absolutePosition: {
+          x: receiptX,
+
+          y: bottomReceiptY,
+        },
       } as unknown as Content,
     ],
+
     styles: {
       institution: {
-        fontSize: 8,
-        bold: true,
-        alignment: 'center',
-        color: '#111827',
-      },
-      institutionSub: {
-        fontSize: 8,
-        bold: true,
-        color: '#374151',
-        alignment: 'center',
-      },
-      copyBadge: {
         fontSize: 7.5,
+
         bold: true,
-        alignment: 'center',
-        color: '#111827',
+
+        alignment: "center",
+
+        color: COLORS.text,
       },
+
+      institutionSub: {
+        fontSize: 7,
+
+        bold: true,
+
+        alignment: "center",
+
+        color: COLORS.primary,
+      },
+
       title: {
-        fontSize: 14,
+        fontSize: 13.5,
+
         bold: true,
-        alignment: 'center',
-        color: '#111827',
+
+        alignment: "center",
+
+        color: COLORS.primaryDark,
       },
+
       titleSub: {
-        fontSize: 7,
-        alignment: 'center',
-        color: '#4b5563',
+        fontSize: 6.4,
+
+        alignment: "center",
+
+        color: COLORS.muted,
       },
+
       saleCodeLabel: {
-        fontSize: 7.2,
-        alignment: 'right',
-        color: '#4b5563',
+        fontSize: 5.8,
+
+        bold: true,
+
+        alignment: "right",
+
+        color: COLORS.muted,
       },
+
       saleCodeValue: {
-        fontSize: 10,
+        fontSize: 9.5,
+
         bold: true,
-        alignment: 'right',
-        color: '#111827',
+
+        alignment: "right",
+
+        color: COLORS.primaryDark,
       },
-      amountLabel: {
-        fontSize: 7,
-        alignment: 'right',
-        color: '#4b5563',
-      },
-      amountValue: {
-        fontSize: 12.5,
-        bold: true,
-        alignment: 'right',
-        color: '#111827',
-      },
+
       mainLabel: {
-        fontSize: 7.4,
+        fontSize: 6.4,
+
         bold: true,
-        color: '#111827',
-        fillColor: '#eef2f7',
+
+        color: COLORS.primaryDark,
+
+        fillColor: COLORS.primarySoft,
       },
+
       mainValue: {
-        fontSize: 7.9,
-        color: '#111827',
-      },
-      sectionTitle: {
-        fontSize: 7.4,
-        bold: true,
-        color: '#111827',
-      },
-      cardTitle: {
-        fontSize: 7,
-        bold: true,
-        color: '#111827',
-      },
-      label: {
-        fontSize: 6.35,
-        bold: true,
-        color: '#4b5563',
-      },
-      value: {
-        fontSize: 6.45,
-        color: '#111827',
-      },
-      valueBold: {
-        fontSize: 6.9,
-        bold: true,
-        color: '#111827',
-      },
-      tableHeader: {
         fontSize: 6.8,
-        bold: true,
-        color: '#111827',
-        fillColor: '#eef2f7',
+
+        color: COLORS.text,
       },
+
+      sectionTitle: {
+        fontSize: 6.8,
+
+        bold: true,
+
+        color: COLORS.primaryDark,
+      },
+
+      tableHeader: {
+        fontSize: 6.3,
+
+        bold: true,
+
+        alignment: "center",
+
+        color: COLORS.white,
+
+        fillColor: COLORS.primary,
+      },
+
       tableCell: {
-        fontSize: 6.55,
-        color: '#111827',
+        fontSize: 6.25,
+
+        color: COLORS.text,
       },
+
       tableCellCenter: {
-        fontSize: 6.55,
-        color: '#111827',
-        alignment: 'center',
+        fontSize: 6.25,
+
+        alignment: "center",
+
+        color: COLORS.text,
       },
+
       tableCellRight: {
-        fontSize: 6.55,
-        color: '#111827',
-        alignment: 'right',
+        fontSize: 6.25,
+
+        alignment: "right",
+
+        color: COLORS.text,
       },
+
       totalLabel: {
-        fontSize: 7.2,
-        bold: true,
-        color: '#111827',
-      },
-      totalValue: {
-        fontSize: 8.5,
-        bold: true,
-        alignment: 'right',
-        color: '#111827',
-      },
-      footerText: {
-        fontSize: 6.6,
-        color: '#374151',
-      },
-      metadata: {
-        fontSize: 5,
-        color: '#6b7280',
-      },
-      signature: {
-        fontSize: 7.3,
-        bold: true,
-        alignment: 'center',
-        color: '#111827',
-      },
-      signatureName: {
         fontSize: 7,
-        alignment: 'center',
-        color: '#111827',
+
+        bold: true,
+
+        alignment: "right",
+
+        color: COLORS.primaryDark,
+      },
+
+      totalValue: {
+        fontSize: 10,
+
+        bold: true,
+
+        alignment: "right",
+
+        color: COLORS.primaryDark,
+      },
+
+      signature: {
+        fontSize: 6.5,
+
+        bold: true,
+
+        alignment: "center",
+
+        color: COLORS.primaryDark,
+      },
+
+      signatureName: {
+        fontSize: 6.3,
+
+        alignment: "center",
+
+        color: COLORS.text,
+      },
+
+      footerText: {
+        fontSize: 5.9,
+
+        color: COLORS.text,
+      },
+
+      metadata: {
+        fontSize: 4.8,
+
+        color: COLORS.muted,
       },
     },
   };
-
-  return documentDefinition;
 }
 
 function buildReceiptCopy(data: SalesReceiptData) {
   return {
     table: {
       widths: [RECEIPT.width],
+
       heights: [RECEIPT.height],
+
       body: [
         [
           {
             border: [true, true, true, true],
+
             margin: [
               RECEIPT_PADDING.left,
               RECEIPT_PADDING.top,
               RECEIPT_PADDING.right,
               RECEIPT_PADDING.bottom,
             ],
-            table: {
-              widths: ['*'],
-              heights: [RECEIPT_BODY_HEIGHT - RECEIPT_FOOTER_HEIGHT, RECEIPT_FOOTER_HEIGHT],
-              body: [
-                [
-                  {
-                    border: [false, false, false, false],
-                    stack: [
-                      buildHeader(data),
-                      buildMainInformation(data),
-                      buildProductsBlock(data),
-                      buildSignatureBlock(data),
+
+            stack: [
+              buildTopAccent(),
+
+              {
+                table: {
+                  widths: ["*"],
+
+                  heights: [RECEIPT_MAIN_HEIGHT, RECEIPT_FOOTER_HEIGHT],
+
+                  body: [
+                    [
+                      {
+                        border: [false, false, false, false],
+
+                        stack: [
+                          buildHeader(data),
+
+                          buildMainInformation(data),
+
+                          buildProductsBlock(data),
+                        ],
+                      },
                     ],
-                  },
-                ],
-                [
-                  {
-                    border: [false, false, false, false],
-                    stack: [buildFooter(data)],
-                  },
-                ],
-              ],
-            },
-            layout: noPaddingLayout(),
+
+                    [
+                      {
+                        border: [false, false, false, false],
+
+                        stack: [buildSignatureBlock(data), buildFooter(data)],
+                      },
+                    ],
+                  ],
+                },
+
+                layout: noPaddingLayout(),
+              },
+            ],
           },
         ],
       ],
     },
+
     layout: outerBorderLayout(),
+
     unbreakable: true,
   };
 }
 
-function buildHeader(data: SalesReceiptData) {
+function buildTopAccent(): Content {
+  return {
+    canvas: [
+      {
+        type: "rect",
+
+        x: 0,
+
+        y: 0,
+
+        w: RECEIPT.width - RECEIPT_PADDING.left - RECEIPT_PADDING.right,
+
+        h: 3,
+
+        color: COLORS.primary,
+      },
+    ],
+
+    margin: [0, 0, 0, 5],
+  } as Content;
+}
+
+function buildHeader(data: SalesReceiptData): Content {
   return {
     table: {
-      widths: [162, '*', 142],
+      widths: [170, "*", 145],
+
       body: [
         [
           {
             border: [false, false, false, false],
-            fillColor: '#f3f4f6',
-            margin: [6, 5, 6, 5],
+
+            margin: [0, 3, 8, 3],
+
             stack: [
               {
-                text: 'MUTUAL DE SERVICIOS AL POLICIA',
-                style: 'institution',
+                text: "MUTUAL DE SERVICIOS AL POLICIA",
+
+                style: "institution",
               },
+
               {
                 text: '"MUSERPOL"',
-                style: 'institutionSub',
+
+                style: "institutionSub",
+
                 margin: [0, 1, 0, 0],
               },
             ],
           },
+
           {
             border: [false, false, false, false],
-            fillColor: '#f3f4f6',
-            margin: [6, 3, 6, 3],
+
+            margin: [6, 0, 6, 0],
+
             stack: [
               {
-                text: 'RECIBO OFICIAL',
-                style: 'title',
-                margin: [0, 3, 0, 0],
+                text: "RECIBO",
+                style: "title",
+              },
+              {
+                text: "COMPROBANTE DE PAGO",
+                style: "titleSub",
+                margin: [0, 1, 0, 0],
               },
             ],
           },
+
           {
             border: [false, false, false, false],
-            fillColor: '#f3f4f6',
-            margin: [6, 4, 6, 4],
-            stack: [
-              {
-                text: `N° VEN-${saleCode(data)}`,
-                style: 'saleCodeValue',
-                margin: [0, 1, 0, 3],
-              },
-            ],
+            margin: [8, 4, 0, 0],
+            text: `Nº VEN-${saleCode(data)}`,
+            style: "saleCodeValue",
           },
         ],
       ],
     },
+
     layout: noPaddingLayout(),
-  };
+
+    margin: [0, 0, 0, 5],
+  } as Content;
 }
 
-function buildMainInformation(data: SalesReceiptData) {
+function buildMainInformation(data: SalesReceiptData): Content {
   return {
-    margin: [0, 6, 0, 0],
     table: {
-      widths: [74, '*', 68, 112],
+      widths: [76, "*", 70, 112],
+
       body: [
         [
+          mainLabelCell("TITULAR"),
+
           {
-            text: 'TITULAR',
-            style: 'mainLabel',
-          },
-          {
-            text: `${customerName(data)} - CI ${customerCi(data)}`,
-            style: 'mainValue',
+            text: `${customerName(data)}  ·  CI ${customerCi(data)}`,
+
+            style: "mainValue",
+
             colSpan: 3,
           },
+
           {},
           {},
         ],
+
         [
+          mainLabelCell("PAGADO POR"),
+
           {
-            text: 'LA SUMA DE',
-            style: 'mainLabel',
+            text: `${payerName(data)}  ·  CI ${payerCi(
+              data
+            )}  ·  Tercero: ${yesNo(data.payer.isThirdParty)}`,
+
+            style: "mainValue",
+
+            colSpan: 3,
           },
+
+          {},
+          {},
+        ],
+
+        [
+          mainLabelCell("POR LA SUMA DE"),
+
           {
             text: amountToLiteral(totalAmount(data)),
-            style: 'mainValue',
+
+            style: "mainValue",
+
+            colSpan: 3,
+
+            bold: true,
           },
-          {
-            text: 'FORMA PAGO',
-            style: 'mainLabel',
-          },
+
+          {},
+          {},
+        ],
+
+        [
+          mainLabelCell("FORMA DE PAGO"),
+
           {
             text: paymentType(data),
-            style: 'mainValue',
+
+            style: "mainValue",
           },
-        ],
-        [
-          {
-            text: 'PAGADOR',
-            style: 'mainLabel',
-          },
-          {
-            text: `${payerName(data)} - CI ${payerCi(data)} - Tercero: ${yesNo(data.payer.isThirdParty)}`,
-            style: 'mainValue',
-          },
-          {
-            text: 'ENTIDAD',
-            style: 'mainLabel',
-          },
+
+          mainLabelCell("ENTIDAD"),
+
           {
             text: paymentLocation(data),
-            style: 'mainValue',
+
+            style: "mainValue",
           },
         ],
       ],
     },
+
     layout: mainTableLayout(),
+  } as Content;
+}
+
+function mainLabelCell(text: string) {
+  return {
+    text,
+
+    style: "mainLabel",
   };
 }
 
-function buildProductsBlock(data: SalesReceiptData) {
+function buildProductsBlock(data: SalesReceiptData): Content {
   const body: unknown[][] = [
     [
       {
-        text: 'SERVICIOS',
-        style: 'tableHeader',
+        text: "POR CONCEPTO DE",
+
+        style: "tableHeader",
+
+        alignment: "left",
       },
+
       {
-        text: 'CANT.',
-        style: 'tableHeader',
-        alignment: 'center',
+        text: "CANT.",
+
+        style: "tableHeader",
       },
+
       {
-        text: 'P. UNIT.',
-        style: 'tableHeader',
-        alignment: 'right',
+        text: "P. UNIT.",
+
+        style: "tableHeader",
+
+        alignment: "right",
       },
+
       {
-        text: 'TOTAL',
-        style: 'tableHeader',
-        alignment: 'right',
+        text: "SUBTOTAL",
+
+        style: "tableHeader",
+
+        alignment: "right",
       },
     ],
-    ...data.products.map(productRow),
+
+    ...data.products.map((product, index) => productRow(product, index)),
   ];
 
   if (data.products.length === 0) {
     body.push([
       {
-        text: 'Sin productos registrados',
-        style: 'tableCell',
+        text: "Sin servicios registrados.",
+
+        style: "tableCell",
+
+        alignment: "center",
+
         colSpan: 4,
+
+        margin: [0, 3, 0, 3],
       },
+
       {},
       {},
       {},
@@ -403,182 +579,341 @@ function buildProductsBlock(data: SalesReceiptData) {
 
   return {
     margin: [0, 5, 0, 0],
+
     stack: [
-      {
-        text: 'POR CONCEPTO DE',
-        style: 'sectionTitle',
-        margin: [0, 0, 0, 2],
-      },
       {
         table: {
           headerRows: 1,
-          widths: ['*', 36, 55, 58],
+
+          widths: ["*", 38, 58, 64],
+
           body,
+
+          dontBreakRows: true,
         },
+
         layout: productsTableLayout(),
       },
-      buildAmountBlock(data),
+
+      buildTotalBlock(data),
     ],
-  };
+  } as Content;
 }
 
-function buildAmountBlock(data: SalesReceiptData) {
+function buildTotalBlock(data: SalesReceiptData): Content {
   return {
-    margin: [0, 28.35, 0, 0],
-    columns: [
-      {
-        width: '*',
-        text: '',
-      },
-      {
-        width: 118,
-        stack: [
+    margin: [0, 4, 0, 0],
+
+    table: {
+      widths: ["*", 88, 100],
+
+      body: [
+        [
           {
-            text: 'IMPORTE',
-            style: 'amountLabel',
+            text: "",
+
+            border: [false, false, false, false],
           },
+
+          {
+            text: "TOTAL PAGADO",
+
+            style: "totalLabel",
+
+            fillColor: COLORS.primarySoft,
+
+            border: [true, true, false, true],
+
+            margin: [4, 4, 4, 4],
+          },
+
           {
             text: money(data.voucher.total, data.currency.symbol),
-            style: 'amountValue',
+
+            style: "totalValue",
+
+            fillColor: COLORS.primarySoft,
+
+            border: [false, true, true, true],
+
+            margin: [4, 2.5, 5, 2.5],
           },
         ],
-      },
-    ],
-  };
+      ],
+    },
+
+    layout: totalTableLayout(),
+  } as Content;
 }
 
-function productRow(product: SaleProducts) {
+function productRow(product: SaleProducts, index: number) {
+  const fillColor = index % 2 === 0 ? COLORS.white : COLORS.rowAlternate;
+
   return [
     {
       text: fallback(product.name),
-      style: 'tableCell',
+
+      style: "tableCell",
+
+      fillColor,
     },
+
     {
       text: fallback(product.amount),
-      style: 'tableCellCenter',
+
+      style: "tableCellCenter",
+
+      fillColor,
     },
+
     {
       text: money(product.price),
-      style: 'tableCellRight',
+
+      style: "tableCellRight",
+
+      fillColor,
     },
+
     {
       text: money(product.total),
-      style: 'tableCellRight',
+
+      style: "tableCellRight",
+
+      fillColor,
     },
   ];
 }
 
-function buildSignatureBlock(data: SalesReceiptData) {
+function buildSignatureBlock(data: SalesReceiptData): Content {
   return {
-    margin: [0, 50, 0, 0],
+    margin: [0, 0, 0, 6],
+
     columns: [
       {
-        width: '*',
-        text: '',
+        width: "*",
+
+        text: "",
       },
-      buildSignatureBox('RECEPCIONADO POR', fallback(data.sale.receptionist)),
+
+      buildSignatureBox("COBRADO POR", fallback(data.sale.receptionist)),
+
       {
-        width: 60,
-        text: '',
+        width: 34,
+
+        text: "",
       },
-      buildSignatureBox('PAGADOR', payerName(data)),
+
+      buildSignatureBox("PAGADO POR", payerName(data)),
+
       {
-        width: '*',
-        text: '',
+        width: "*",
+
+        text: "",
       },
     ],
-  };
+  } as Content;
 }
 
-function buildFooter(data: SalesReceiptData) {
+function buildSignatureBox(title: string, name: string): Content {
   return {
-    margin: [0, RECEIPT_FOOTER_TOP_MARGIN, 0, 0],
+    width: SIGNATURE_BOX_WIDTH,
+
+    stack: [
+      buildSignatureLine(SIGNATURE_BOX_WIDTH),
+
+      {
+        text: title,
+
+        style: "signature",
+
+        margin: [0, 2, 0, 0],
+      },
+
+      {
+        text: fitSignatureName(name),
+
+        style: "signatureName",
+
+        margin: [0, 1, 0, 0],
+      },
+    ],
+  } as Content;
+}
+
+function buildSignatureLine(width: number): Content {
+  return {
+    canvas: [
+      {
+        type: "line",
+
+        x1: 0,
+
+        y1: 0,
+
+        x2: width,
+
+        y2: 0,
+
+        lineWidth: 0.55,
+
+        lineColor: COLORS.primaryDark,
+      },
+    ],
+
+    margin: [0, 0, 0, 2],
+  } as Content;
+}
+
+function buildFooter(data: SalesReceiptData): Content {
+  return {
     stack: [
       {
-        margin: [0, 0, 0, 0],
-        columns: [
+        canvas: [
           {
-            width: '*',
-            stack: [
-              {
-                text: `Fecha de emisión: ${formatSpanishDate(receiptDate(data))}`,
-                style: 'footerText',
-              },
-              {
-                text: metadataText(data),
-                style: 'metadata',
-                margin: [0, 3, 0, 0],
-              },
-            ],
+            type: "line",
+
+            x1: 0,
+
+            y1: 0,
+
+            x2: RECEIPT.width - RECEIPT_PADDING.left - RECEIPT_PADDING.right,
+
+            y2: 0,
+
+            lineWidth: 0.4,
+
+            lineColor: COLORS.border,
+          },
+        ],
+
+        margin: [0, 2, 0, 4],
+      },
+
+      {
+        text: [
+          {
+            text: "Fecha de emisión: ",
+
+            bold: true,
+
+            color: COLORS.primaryDark,
+          },
+
+          {
+            text: formatSpanishDate(receiptDate(data)),
+          },
+        ],
+
+        style: "footerText",
+      },
+
+      {
+        text: metadataText(data),
+
+        style: "metadata",
+
+        margin: [0, 2, 0, 0],
+      },
+    ],
+  } as Content;
+}
+
+function buildCutSeparator(width: number): ContentColumns {
+  const labelWidth = 42;
+
+  const lineWidth = (width - labelWidth) / 2;
+
+  return {
+    columns: [
+      {
+        width: lineWidth,
+
+        canvas: [
+          {
+            type: "line",
+
+            x1: 0,
+
+            y1: 4,
+
+            x2: lineWidth - 6,
+
+            y2: 4,
+
+            lineWidth: 0.45,
+
+            dash: {
+              length: 3,
+
+              space: 3,
+            },
+
+            lineColor: COLORS.borderStrong,
+          },
+        ],
+      },
+
+      {
+        width: labelWidth,
+
+        text: "CORTE",
+
+        alignment: "center",
+
+        fontSize: 5.5,
+
+        bold: true,
+
+        color: COLORS.muted,
+      },
+
+      {
+        width: lineWidth,
+
+        canvas: [
+          {
+            type: "line",
+
+            x1: 6,
+
+            y1: 4,
+
+            x2: lineWidth,
+
+            y2: 4,
+
+            lineWidth: 0.45,
+
+            dash: {
+              length: 3,
+
+              space: 3,
+            },
+
+            lineColor: COLORS.borderStrong,
           },
         ],
       },
     ],
-  };
-}
-
-function buildSignatureBox(title: string, name: string) {
-  return {
-    width: SIGNATURE_BOX_WIDTH,
-    stack: [
-      buildSignatureLine(SIGNATURE_BOX_WIDTH),
-      {
-        text: title,
-        style: 'signature',
-        margin: [0, 2, 0, 0],
-      },
-      {
-        text: fitSignatureName(name),
-        style: 'signatureName',
-        margin: [0, 1, 0, 0],
-      },
-    ],
-  };
-}
-
-function buildSignatureLine(width: number) {
-  return {
-    canvas: [
-      {
-        type: 'line',
-        x1: 0,
-        y1: 0,
-        x2: width,
-        y2: 0,
-        lineWidth: 0.6,
-        lineColor: '#111827',
-      },
-    ],
-    margin: [0, 0, 0, 3],
-  };
-}
-
-function buildCutSeparator(width: number) {
-  return {
-    canvas: [
-      {
-        type: 'line',
-        x1: 0,
-        y1: 0,
-        x2: width,
-        y2: 0,
-        lineWidth: 0.5,
-        dash: { length: 3, space: 3 },
-        lineColor: '#9ca3af',
-      },
-    ],
-  };
+  } as ContentColumns;
 }
 
 function outerBorderLayout() {
   return {
-    hLineColor: () => '#111827',
-    vLineColor: () => '#111827',
-    hLineWidth: () => 0.7,
-    vLineWidth: () => 0.7,
+    hLineColor: () => COLORS.primaryDark,
+
+    vLineColor: () => COLORS.primaryDark,
+
+    hLineWidth: () => 0.8,
+
+    vLineWidth: () => 0.8,
+
     paddingLeft: () => 0,
+
     paddingRight: () => 0,
+
     paddingTop: () => 0,
+
     paddingBottom: () => 0,
   };
 }
@@ -586,63 +921,77 @@ function outerBorderLayout() {
 function noPaddingLayout() {
   return {
     hLineWidth: () => 0,
-    vLineWidth: () => 0,
-    paddingLeft: () => 0,
-    paddingRight: () => 0,
-    paddingTop: () => 0,
-    paddingBottom: () => 0,
-  };
-}
 
-function badgeLayout() {
-  return {
-    hLineColor: () => '#6b7280',
-    vLineColor: () => '#6b7280',
-    hLineWidth: () => 0.45,
-    vLineWidth: () => 0.45,
+    vLineWidth: () => 0,
+
     paddingLeft: () => 0,
+
     paddingRight: () => 0,
+
     paddingTop: () => 0,
+
     paddingBottom: () => 0,
   };
 }
 
 function mainTableLayout() {
   return {
-    hLineColor: () => '#9ca3af',
-    vLineColor: () => '#9ca3af',
-    hLineWidth: () => 0.45,
-    vLineWidth: () => 0.45,
-    paddingLeft: () => 3,
-    paddingRight: () => 3,
-    paddingTop: () => 2,
-    paddingBottom: () => 2,
-  };
-}
+    hLineColor: () => COLORS.borderStrong,
 
-function detailGridLayout() {
-  return {
-    hLineColor: () => '#d1d5db',
-    vLineColor: () => '#d1d5db',
-    hLineWidth: () => 0.35,
-    vLineWidth: () => 0.35,
-    paddingLeft: () => 2,
-    paddingRight: () => 2,
-    paddingTop: () => 2,
-    paddingBottom: () => 2,
+    vLineColor: () => COLORS.borderStrong,
+
+    hLineWidth: () => 0.4,
+
+    vLineWidth: () => 0.4,
+
+    paddingLeft: () => 4,
+
+    paddingRight: () => 4,
+
+    paddingTop: () => 2.2,
+
+    paddingBottom: () => 2.2,
   };
 }
 
 function productsTableLayout() {
   return {
-    hLineColor: () => '#9ca3af',
-    vLineColor: () => '#9ca3af',
-    hLineWidth: () => 0.35,
-    vLineWidth: () => 0.35,
-    paddingLeft: () => 2.2,
-    paddingRight: () => 2.2,
-    paddingTop: () => 1.5,
-    paddingBottom: () => 1.5,
+    hLineColor: (rowIndex: number) =>
+      rowIndex <= 1 ? COLORS.primaryDark : COLORS.border,
+
+    vLineColor: () => COLORS.border,
+
+    hLineWidth: (rowIndex: number) => (rowIndex <= 1 ? 0.55 : 0.3),
+
+    vLineWidth: () => 0.3,
+
+    paddingLeft: () => 3,
+
+    paddingRight: () => 3,
+
+    paddingTop: (rowIndex: number) => (rowIndex === 0 ? 2.5 : 1.8),
+
+    paddingBottom: (rowIndex: number) => (rowIndex === 0 ? 2.5 : 1.8),
+  };
+}
+
+function totalTableLayout() {
+  return {
+    hLineColor: () => COLORS.borderStrong,
+
+    vLineColor: () => COLORS.borderStrong,
+
+    hLineWidth: () => 0.5,
+
+    vLineWidth: () => 0.5,
+
+    paddingLeft: () => 0,
+
+    paddingRight: () => 0,
+
+    paddingTop: () => 0,
+
+    paddingBottom: () => 0,
   };
 }
 
@@ -651,107 +1000,117 @@ function saleCode(data: SalesReceiptData): string {
 }
 
 function totalAmount(data: SalesReceiptData): string {
-  return data.voucher.total ?? data.totals.amount ?? '0.00';
+  return data.voucher.total ?? data.totals.amount ?? "0.00";
 }
 
 function customerName(data: SalesReceiptData): string {
-  return data.principalCustomer.fullName ?? 'SIN NOMBRE';
+  return data.principalCustomer.fullName ?? "SIN NOMBRE";
 }
 
 function customerCi(data: SalesReceiptData): string {
-  return data.principalCustomer.identityCard ?? 'SIN CI';
+  return data.principalCustomer.identityCard ?? "SIN CI";
 }
 
 function payerName(data: SalesReceiptData): string {
-  return data.payer.customer ?? data.principalCustomer.fullName ?? 'SIN NOMBRE';
+  return data.payer.customer ?? data.principalCustomer.fullName ?? "SIN NOMBRE";
 }
 
 function payerCi(data: SalesReceiptData): string {
-  return data.payer.identityCardCustomer ?? data.principalCustomer.identityCard ?? 'SIN CI';
+  return (
+    data.payer.identityCardCustomer ??
+    data.principalCustomer.identityCard ??
+    "SIN CI"
+  );
 }
 
 function paymentType(data: SalesReceiptData): string {
-  return data.payment.type?.name ?? 'No especificado';
+  return data.payment.type?.name ?? "No especificado";
 }
 
 function paymentLocation(data: SalesReceiptData): string {
-  return data.voucher.paymentLocation ?? 'No especificado';
-}
-
-function productsConcept(products: SaleProducts[]): string {
-  if (!products || products.length === 0) {
-    return 'Sin productos registrados';
-  }
-
-  if (products.length === 1) {
-    return products[0].name;
-  }
-
-  return products.map((product) => product.name).join(', ');
-}
-
-function description(data: SalesReceiptData): string {
-  return data.voucher.description ?? 'No especificado';
+  return data.voucher.paymentLocation ?? "No especificado";
 }
 
 function receiptDate(data: SalesReceiptData): string | Date {
-  return data.voucher.depositDate ?? data.voucher.createdAt ?? data.sale.createdAt;
-}
-
-function fallbackDate(value: string | Date | null): string {
-  return value ? adminDate(value) : '-';
+  return (
+    data.voucher.depositDate ?? data.voucher.createdAt ?? data.sale.createdAt
+  );
 }
 
 function adminDate(value: string | Date): string {
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
-    return '-';
+    return "-";
   }
 
-  const formatter = new Intl.DateTimeFormat('es-BO', {
-    timeZone: 'America/La_Paz',
-    day: '2-digit',
-    month: '2-digit',
-    year: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false,
-  });
+  return new Intl.DateTimeFormat("es-BO", {
+    timeZone: "America/La_Paz",
 
-  return formatter.format(date).replace(',', '');
+    day: "2-digit",
+
+    month: "2-digit",
+
+    year: "numeric",
+
+    hour: "2-digit",
+
+    minute: "2-digit",
+
+    hour12: false,
+  })
+    .format(date)
+    .replace(",", "");
 }
 
-function money(amount: string, symbol?: string | null): string {
-  return `${normalizeCurrency(symbol)} ${amount ?? '0.00'}`.trim();
+function money(
+  amount: string | null | undefined,
+
+  symbol?: string | null
+): string {
+  return `${normalizeCurrency(symbol)} ${amount ?? "0.00"}`.trim();
 }
 
 function normalizeCurrency(symbol?: string | null): string {
-  const value = (symbol ?? 'Bs.').trim();
+  const value = (symbol ?? "Bs.").trim();
+
   const lower = value.toLowerCase();
 
-  if (lower === 'bs' || lower === 'bs.') {
-    return 'Bs.';
+  if (lower === "bs" || lower === "bs.") {
+    return "Bs.";
   }
 
   return value;
 }
 
 function amountToLiteral(value: string): string {
-  const [integerPart, decimalPart = '00'] = String(value ?? '0.00').split('.');
-  const amount = Number(integerPart);
-  const cents = decimalPart.padEnd(2, '0').slice(0, 2);
+  const normalized = String(value ?? "0.00")
+    .replace(/\s/g, "")
+    .replace(/,/g, "");
 
-  return `${numberToSpanish(amount)} ${cents}/100 Bolivianos`;
+  const numericValue = Number(normalized);
+
+  if (!Number.isFinite(numericValue)) {
+    return "-";
+  }
+
+  const integerPart = Math.trunc(numericValue);
+
+  const cents = Math.round(Math.abs(numericValue - integerPart) * 100)
+    .toString()
+    .padStart(2, "0")
+    .slice(0, 2);
+
+  return `${numberToSpanish(integerPart)} ${cents}/100 BOLIVIANOS`;
 }
 
 function numberToSpanish(value: number): string {
   if (!Number.isFinite(value)) {
-    return '-';
+    return "-";
   }
 
   if (value === 0) {
-    return 'CERO';
+    return "CERO";
   }
 
   if (value < 0) {
@@ -762,53 +1121,79 @@ function numberToSpanish(value: number): string {
     return String(value).toUpperCase();
   }
 
-  if (value <= 999999) {
+  if (value < 1_000_000) {
     return numberToSpanishUnderMillion(value);
+  }
+
+  if (value < 1_000_000_000) {
+    const millions = Math.floor(value / 1_000_000);
+
+    const rest = value % 1_000_000;
+
+    const prefix =
+      millions === 1
+        ? "UN MILLON"
+        : `${numberToSpanishUnderMillion(millions)} MILLONES`;
+
+    return rest === 0
+      ? prefix
+      : `${prefix} ${numberToSpanishUnderMillion(rest)}`;
   }
 
   return String(value).toUpperCase();
 }
 
 function numberToSpanishUnderMillion(value: number): string {
-  const units = ['', 'UNO', 'DOS', 'TRES', 'CUATRO', 'CINCO', 'SEIS', 'SIETE', 'OCHO', 'NUEVE'];
+  const units = [
+    "",
+    "UNO",
+    "DOS",
+    "TRES",
+    "CUATRO",
+    "CINCO",
+    "SEIS",
+    "SIETE",
+    "OCHO",
+    "NUEVE",
+  ];
 
   const teens = [
-    'DIEZ',
-    'ONCE',
-    'DOCE',
-    'TRECE',
-    'CATORCE',
-    'QUINCE',
-    'DIECISEIS',
-    'DIECISIETE',
-    'DIECIOCHO',
-    'DIECINUEVE',
+    "DIEZ",
+    "ONCE",
+    "DOCE",
+    "TRECE",
+    "CATORCE",
+    "QUINCE",
+    "DIECISEIS",
+    "DIECISIETE",
+    "DIECIOCHO",
+    "DIECINUEVE",
   ];
 
   const tens = [
-    '',
-    '',
-    'VEINTE',
-    'TREINTA',
-    'CUARENTA',
-    'CINCUENTA',
-    'SESENTA',
-    'SETENTA',
-    'OCHENTA',
-    'NOVENTA',
+    "",
+    "",
+    "VEINTE",
+    "TREINTA",
+    "CUARENTA",
+    "CINCUENTA",
+    "SESENTA",
+    "SETENTA",
+    "OCHENTA",
+    "NOVENTA",
   ];
 
   const hundreds = [
-    '',
-    'CIENTO',
-    'DOSCIENTOS',
-    'TRESCIENTOS',
-    'CUATROCIENTOS',
-    'QUINIENTOS',
-    'SEISCIENTOS',
-    'SETECIENTOS',
-    'OCHOCIENTOS',
-    'NOVECIENTOS',
+    "",
+    "CIENTO",
+    "DOSCIENTOS",
+    "TRESCIENTOS",
+    "CUATROCIENTOS",
+    "QUINIENTOS",
+    "SEISCIENTOS",
+    "SETECIENTOS",
+    "OCHOCIENTOS",
+    "NOVECIENTOS",
   ];
 
   if (value < 10) {
@@ -820,22 +1205,24 @@ function numberToSpanishUnderMillion(value: number): string {
   }
 
   if (value < 30) {
-    return value === 20 ? 'VEINTE' : `VEINTI${units[value - 20]}`;
+    return value === 20 ? "VEINTE" : `VEINTI${units[value - 20]}`;
   }
 
   if (value < 100) {
     const unit = value % 10;
+
     const ten = Math.floor(value / 10);
 
     return unit === 0 ? tens[ten] : `${tens[ten]} Y ${units[unit]}`;
   }
 
   if (value === 100) {
-    return 'CIEN';
+    return "CIEN";
   }
 
   if (value < 1000) {
     const rest = value % 100;
+
     const hundred = Math.floor(value / 100);
 
     return rest === 0
@@ -843,45 +1230,48 @@ function numberToSpanishUnderMillion(value: number): string {
       : `${hundreds[hundred]} ${numberToSpanishUnderMillion(rest)}`;
   }
 
-  if (value < 1000000) {
-    const thousands = Math.floor(value / 1000);
-    const rest = value % 1000;
-    const prefix = thousands === 1 ? 'MIL' : `${numberToSpanishUnderMillion(thousands)} MIL`;
+  const thousands = Math.floor(value / 1000);
 
-    return rest === 0 ? prefix : `${prefix} ${numberToSpanishUnderMillion(rest)}`;
-  }
+  const rest = value % 1000;
 
-  return String(value);
+  const prefix =
+    thousands === 1 ? "MIL" : `${numberToSpanishUnderMillion(thousands)} MIL`;
+
+  return rest === 0 ? prefix : `${prefix} ${numberToSpanishUnderMillion(rest)}`;
 }
 
 function yesNo(value: boolean | null | undefined): string {
   if (value === null || value === undefined) {
-    return '-';
+    return "-";
   }
 
-  return value ? 'Sí' : 'No';
+  return value ? "Sí" : "No";
 }
 
 function fallback(value: unknown): string {
-  if (value === null || value === undefined || value === '') {
-    return '-';
+  if (value === null || value === undefined || value === "") {
+    return "-";
   }
 
   return String(value);
 }
 
 function fitSignatureName(value: string): string {
-  const name = fallback(value).replace(/\s+/g, ' ').trim();
+  const name = fallback(value).replace(/\s+/g, " ").trim();
 
-  return name.length > 32 ? `${name.slice(0, 29)}...` : name;
+  return name.length > 38 ? `${name.slice(0, 35)}...` : name;
 }
 
 function metadataText(data: SalesReceiptData): string {
   const metadata = [
     data.metadata?.source ? `Fuente: ${data.metadata.source}` : null,
-    data.metadata?.generatedFor ? `Generado para: ${data.metadata.generatedFor}` : null,
-    data.metadata?.generatedAt ? `Generado en: ${adminDate(data.metadata.generatedAt)}` : null,
+
+    data.metadata?.generatedAt
+      ? `Generado en: ${adminDate(data.metadata.generatedAt)}`
+      : null,
   ].filter(Boolean);
 
-  return metadata.length > 0 ? metadata.join(' | ') : 'Metadata: -';
+  return metadata.length > 0
+    ? metadata.join("  |  ")
+    : "Información de generación no disponible.";
 }
