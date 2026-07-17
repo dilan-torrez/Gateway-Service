@@ -61,12 +61,6 @@ export class SalesController {
   @Get('receipt/:saleId')
   @ApiOperation({ summary: 'Generar recibo oficial de venta en PDF' })
   @ApiParam({ name: 'saleId', type: Number, example: 1 })
-  @ApiQuery({
-    name: 'template',
-    required: false,
-    enum: ['reciboPrueba', 'reciboFormal'],
-    example: 'reciboFormal',
-  })
   @ApiProduces('application/pdf')
   @ApiResponse({
     status: 200,
@@ -78,14 +72,13 @@ export class SalesController {
   })
   async saleReceipt(
     @Param('saleId', ParseIntPipe) saleId: number,
-    @Query('template') template: string,
     @Res() res: Response,
   ) {
-    const dataSale = await this.nats.firstValue('sales.personSaleDetails', {
+    const dataSale = await this.nats.firstValue('sales.voucherPdf', {
       saleId,
     });
 
-    const receipt = await this.reportsSalesService.pdfMakeSaleReceipt(dataSale.data, template);
+    const receipt = await this.reportsSalesService.pdfMakeSaleReceipt(dataSale.data);
 
     res.set({
       'Content-Type': receipt.contentType,
@@ -108,12 +101,6 @@ export class SalesController {
     required: true,
     example: '2026-07-13',
   })
-  @ApiQuery({
-    name: 'template',
-    required: false,
-    enum: ['reportSales'],
-    example: 'reportSales',
-  })
   @ApiProduces('application/pdf')
   @ApiResponse({
     status: 200,
@@ -126,7 +113,6 @@ export class SalesController {
   async salesList(
     @Query('dateFrom') dateFrom: string,
     @Query('dateTo') dateTo: string,
-    @Query('template') template: string,
     @Req() req: Request & { user?: { username?: string; name?: string } },
     @Res() res: Response,
   ) {
@@ -147,10 +133,9 @@ export class SalesController {
         ...dataSale.data,
         metadata: {
           ...dataSale.data.metadata,
-          generatedBy: req.user?.username,
+          generatedBy: req.user?.username ?? 'Usuario',
         },
       },
-      template,
     );
 
     res.set({

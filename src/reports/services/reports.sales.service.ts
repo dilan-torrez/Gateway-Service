@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ReportRenderResult } from '../interfaces/common/report-render-result.interface';
 import { SalesListData } from '../interfaces/sales/sales-list-data.interface';
 import { SalesReceiptData } from '../interfaces/sales/sales-receipt-data.interface';
@@ -35,18 +35,8 @@ export class ReportsSalesService {
     };
   }
 
-  async pdfMakeSaleReceipt(
-    data: SalesReceiptData,
-    templateId?: string,
-  ): Promise<ReportRenderResult> {
-    const template = findSalesReceiptTemplate(templateId);
-
-    if (!template) {
-      throw new BadRequestException({
-        error: true,
-        message: 'La plantilla solicitada para el recibo de venta no existe.',
-      });
-    }
+  async pdfMakeSaleReceipt(data: SalesReceiptData): Promise<ReportRenderResult> {
+    const template = findSalesReceiptTemplate();
 
     // Aqui se arma el recibo con los datos de la venta y la plantilla elegida.
     const documentDefinition = template(data);
@@ -63,15 +53,8 @@ export class ReportsSalesService {
     };
   }
 
-  async pdfMakeSalesList(data: SalesListData, templateId?: string): Promise<ReportRenderResult> {
-    const template = findSalesListTemplate(templateId);
-
-    if (!template) {
-      throw new BadRequestException({
-        error: true,
-        message: 'La plantilla solicitada para el reporte de ventas no existe.',
-      });
-    }
+  async pdfMakeSalesList(data: SalesListData): Promise<ReportRenderResult> {
+    const template = findSalesListTemplate();
 
     const documentDefinition = template(data);
     const buffer = await this.pdfMake.generatePdfBuffer(documentDefinition);
