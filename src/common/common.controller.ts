@@ -1,16 +1,18 @@
 import {
   Controller,
   Get,
+  Headers,
   Param,
   Post,
   Put,
+  Req,
   UploadedFile,
   UseInterceptors,
   Body,
   UseGuards,
 } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiConsumes, ApiHeader, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
   WhatsappService,
@@ -18,10 +20,12 @@ import {
   FtpService,
   CitizenshipDigitalService,
   BcbService,
+  BcbPaymentNotificationDto,
   SmsDto,
   WhatsappDto,
 } from 'src/common';
 import { AuthGuard } from 'src/auth/guards';
+import { Request } from 'express';
 
 @ApiTags('common')
 @Controller('common')
@@ -234,21 +238,45 @@ export class CommonController {
         metaData: {
           type: 'object',
           example: {
-            key: 'value',
-            otherKey: 123,
+            origen: 'sales-service',
+            schema: 'sales',
+            message: 'bcbPaymentNotification',
+            tipo: 'venta-qr',
+            personId: '123',
           },
           additionalProperties: true,
         },
       },
-      required: ['idQR', 'eif', 'codMoneda', 'estado'],
+      required: ['idQR', 'eif', 'codMoneda', 'estado', 'metaData'],
     },
   })
+  @ApiHeader({
+    name: 'Authorization',
+    required: false,
+    description: 'Validación Bearer temporalmente desactivada',
+  })
   @Post('pagos/notificacion/notificacionPago')
-  async paymentNotification(@Body() data: any) {
+  async paymentNotification(
+    @Body() data: BcbPaymentNotificationDto,
+    @Headers('authorization') authorization: string | undefined,
+    @Req() request: Request,
+  ) {
+    this.bcbService.validateNotificationAccess(
+      authorization,
+      request.socket.remoteAddress,
+    );
+
     try {
       return await this.bcbService.processPaymentNotification(data);
     } catch (error) {
-      return this.bcbService.buildErrorResponse(error);
+      const response = this.bcbService.buildErrorResponse(error);
+      const data = response.data;
+
+      return {
+        error: true,
+        message: response.message,
+        data,
+      };
     }
   }
 
