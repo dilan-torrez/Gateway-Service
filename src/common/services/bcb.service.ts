@@ -1,11 +1,8 @@
 import {
   BadRequestException,
-  ForbiddenException,
   HttpException,
   HttpStatus,
   Injectable,
-  ServiceUnavailableException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
@@ -27,15 +24,9 @@ export class BcbService {
   private readonly bcbKeyId = bcbEnvs.bcbKeyId;
   private readonly bcbSecret = bcbEnvs.bcbSecret;
   private readonly bcbToken = bcbEnvs.bcbToken;
-  private readonly bcbNotificationSecurityEnabled = false;
-  private readonly bcbNotificationToken = '[ENCRYPTION_KEY]';
-  private readonly bcbNotificationAllowedIps = ['[IP_ADDRESS]'];
   private readonly bcbRequestRetries = 2;
   private readonly bcbRetryDelayMs = 500;
   private readonly validQrStatuses: string[] = Object.values(BcbQrStatus);
-  private readonly allowedNotificationPatterns = new Set([
-    'sales.bcbPaymentNotification',
-  ]);
   private readonly unavailableMessage =
     'Servicio BCB fuera de servicio temporalmente. Intente nuevamente más tarde.';
 
@@ -118,61 +109,9 @@ export class BcbService {
     };
   }
 
-  validateNotificationAccess(authorization?: string, remoteAddress?: string): void {
-    if (!this.bcbNotificationSecurityEnabled) {
-      return;
-    }
-
-    const expectedToken = String(this.bcbNotificationToken ?? '').trim();
-
-    if (!expectedToken) {
-      throw new ServiceUnavailableException(
-        {
-          error: true,
-          message:
-            'BCB_NOTIFICATION_TOKEN no está configurado para proteger el webhook.',
-          data: null,
-        },
-      );
-    }
-
-    const [scheme, receivedToken] = String(authorization ?? '').trim().split(/\s+/, 2);
-
-    if (
-      scheme?.toLowerCase() !== 'bearer' ||
-      !receivedToken ||
-      !this.secureEquals(receivedToken, expectedToken)
-    ) {
-      throw new UnauthorizedException({
-        error: true,
-        message: 'Token de notificación BCB inválido.',
-        data: null,
-      });
-    }
-
-    const allowedIps = this.bcbNotificationAllowedIps
-      .map((ip) => this.normalizeIpAddress(ip))
-      .filter(Boolean);
-
-    if (allowedIps.length === 0) {
-      return;
-    }
-
-    const sourceIp = this.normalizeIpAddress(remoteAddress);
-
-    if (!sourceIp || !allowedIps.includes(sourceIp)) {
-      throw new ForbiddenException({
-        error: true,
-        message: 'IP de notificación BCB no autorizada.',
-        data: null,
-      });
-    }
-  }
-
   async processPaymentNotification(payload: BcbPaymentNotificationDto) {
     const bcbValidation = await this.notifications(payload);
-    const notificationPattern = this.resolveNotificationPattern(payload.metaData);
-    const salesResult = await this.nats.firstValue(notificationPattern, {
+    const salesResult = await this.nats.firstValue('sales.bcbPaymentNotification', {
       notification: payload,
       bcbValidation,
     });
@@ -526,44 +465,6 @@ export class BcbService {
     return errors;
   }
 
-  private resolveNotificationPattern(
-    metadata: Record<string, unknown>,
-  ): string {
-    const origin = String(metadata?.origen ?? '').trim();
-    const type = String(metadata?.tipo ?? '').trim();
-    const schema = String(metadata?.schema ?? '').trim();
-    const message = String(metadata?.message ?? '').trim();
-    const validSegment = /^[a-z][a-zA-Z0-9]*$/;
-
-    if (origin !== 'sales-service' || type !== 'venta-qr') {
-      throw new BadRequestException({
-        error: true,
-        message: 'Metadata BCB inválida para una venta QR.',
-        data: null,
-      });
-    }
-
-    if (!validSegment.test(schema) || !validSegment.test(message)) {
-      throw new BadRequestException({
-        error: true,
-        message: 'La ruta NATS indicada en metadata BCB no es válida.',
-        data: null,
-      });
-    }
-
-    const pattern = `${schema}.${message}`;
-
-    if (!this.allowedNotificationPatterns.has(pattern)) {
-      throw new BadRequestException({
-        error: true,
-        message: 'La ruta NATS indicada en metadata BCB no está autorizada.',
-        data: null,
-      });
-    }
-
-    return pattern;
-  }
-
   private throwBcbHttpError(error: any): never {
     if (error instanceof HttpException) {
       const status = error.getStatus();
@@ -674,19 +575,6 @@ export class BcbService {
     }
 
     return cleaned || this.unavailableMessage;
-  }
-
-  private secureEquals(receivedValue: string, expectedValue: string): boolean {
-    const received = Buffer.from(receivedValue, 'utf8');
-    const expected = Buffer.from(expectedValue, 'utf8');
-
-    return received.length === expected.length && crypto.timingSafeEqual(received, expected);
-  }
-
-  private normalizeIpAddress(value?: string): string {
-    return String(value ?? '')
-      .trim()
-      .replace(/^::ffff:/, '');
   }
 
   private async requestWithRetry<T>(request: () => Promise<T>): Promise<T> {
