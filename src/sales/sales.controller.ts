@@ -8,6 +8,9 @@ import {
   Req,
   Res,
   UseGuards,
+  Post,
+  ParseUUIDPipe,
+  Body
 } from '@nestjs/common';
 import {
   ApiOperation,
@@ -16,6 +19,7 @@ import {
   ApiQuery,
   ApiResponse,
   ApiTags,
+  ApiBody,
 } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { NatsService } from 'src/common';
@@ -40,15 +44,6 @@ export class SalesController {
     return this.nats.send('sales.searchPerson', { value, type });
   }
 
-  @Get('groups')
-  @ApiResponse({
-    status: 200,
-    description: 'Obtener grupos de ventas',
-  })
-  async groups() {
-    return this.nats.send('sales.groups', {});
-  }
-
   @Get('groups/:groupId/products')
   @ApiResponse({
     status: 200,
@@ -58,7 +53,117 @@ export class SalesController {
     return this.nats.send('sales.groupProducts', { groupId });
   }
 
-  @Get('receipt/:saleId')
+  @Get(':personUuid/forCreatingSale')
+  @ApiResponse({
+    status: 200,
+    description: 'Muestra una persona con sus relaciones y características adicionales',
+  })
+  async findPerson(@Param('personUuid', new ParseUUIDPipe()) personUuid: string) {
+    return this.nats.send('sales.forCreatingSale', { personUuid });
+  }
+
+  @Post('generateQr')
+  @ApiOperation({
+    summary: 'Crear Qr en base a la Venta',
+    description: `Este endpoint crea el Qr para las ventas`,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'El Qr fue creado exitosamente',
+  })
+  @ApiBody({
+    schema: {
+      example: {
+        personId: 1,
+        parameterId: 1,
+        paymentTypeId: 1,
+        saleProducts: [
+          {
+            id: 5,
+            name: 'Folder Préstamos Sector Activo',
+            code: 'F-PA',
+            price: '25.00',
+            amount: 1,
+          },
+        ],
+      },
+    },
+  })
+  async generateQr(@Body() body: any) {
+    return await this.nats.firstValue('sales.generateQr', body);
+  }
+
+  @Post('createSale')
+  @ApiOperation({
+    summary: 'Crear Venta',
+    description: `Este endpoint crea ventas, los productos de la venta y el voucher`,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'La venta fue creado exitosamente',
+  })
+  @ApiBody({
+    schema: {
+      example: {
+        personId: 1,
+        parameterId: 1,
+        paymentTypeId: 1,
+        saleProducts: [
+          {
+            id: 5,
+            name: 'Folder Préstamos Sector Activo',
+            code: 'F-PA',
+            price: '25.00',
+            amount: 1,
+          },
+        ],
+      },
+    },
+  })
+  async createSale(@Body() body: any) {
+    const response = await this.nats.firstValue('sales.createSale', body);
+    return response;
+  }
+
+  @Get(':personId/sales')
+  @ApiOperation({
+    summary: 'Obtener ventas de una persona',
+    description: `Este endpoint obtiene las ventas de una persona`,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Las ventas fueron obtenidas exitosamente',
+  })
+  @ApiParam({
+    name: 'personId',
+    description: 'ID de la persona',
+    type: Number,
+  })
+  async personSales(@Param('personId', new ParseIntPipe()) personId: number) {
+    return await this.nats.firstValue('sales.personSales', { personId });
+  }
+
+  @Get(':personId/qrPending')
+  @ApiOperation({
+    summary: 'Obtener Qr pendientes de una persona',
+    description: `Este endpoint obtiene los Qr pendientes de una persona`,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Los Qr fueron obtenidos exitosamente',
+  })
+  @ApiParam({
+    name: 'personId',
+    description: 'ID de la persona',
+    type: Number,
+  })
+  async personPendingQr(@Param('personId', new ParseIntPipe()) personId: number) {
+    return await this.nats.firstValue('sales.personPendingQr', { personId });
+  }
+
+
+
+  @Get('voucherPdf/:saleId')
   @ApiOperation({ summary: 'Generar recibo oficial de venta en PDF' })
   @ApiParam({ name: 'saleId', type: Number, example: 1 })
   @ApiProduces('application/pdf')
@@ -70,7 +175,7 @@ export class SalesController {
       format: 'binary',
     },
   })
-  async saleReceipt(
+  async voucherPdf(
     @Param('saleId', ParseIntPipe) saleId: number,
     @Res() res: Response,
   ) {
@@ -145,5 +250,21 @@ export class SalesController {
     });
 
     res.send(receipt.buffer);
+  }
+
+  @Get(':qrId/qrImage')
+  @ApiResponse({
+    status: 200,
+    description: 'Obtener la imagen del qr',
+  })
+  async getQrImage(@Param('qrId') qrId: string) {
+    const response = await this.nats.firstValue('sales.qrImage', { qrId });
+    return {
+      error: false,
+      message: 'Qr image obtenido',
+      data: {
+        qrImage: response,
+      },
+    }
   }
 }
