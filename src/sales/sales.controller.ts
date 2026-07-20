@@ -133,7 +133,7 @@ export class SalesController {
         ...dataSale.data,
         metadata: {
           ...dataSale.data.metadata,
-          generatedBy: req.user?.username ?? 'Usuario',
+          generatedBy: req.user,
         },
       },
     );
