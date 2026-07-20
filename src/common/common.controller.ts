@@ -1,18 +1,16 @@
 import {
   Controller,
   Get,
-  Headers,
   Param,
   Post,
   Put,
-  Req,
   UploadedFile,
   UseInterceptors,
   Body,
   UseGuards,
 } from '@nestjs/common';
 import { MessagePattern, Payload } from '@nestjs/microservices';
-import { ApiBody, ApiConsumes, ApiHeader, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import { ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { FileInterceptor } from '@nestjs/platform-express';
 import {
   WhatsappService,
@@ -20,12 +18,10 @@ import {
   FtpService,
   CitizenshipDigitalService,
   BcbService,
-  BcbPaymentNotificationDto,
   SmsDto,
   WhatsappDto,
 } from 'src/common';
 import { AuthGuard } from 'src/auth/guards';
-import { Request } from 'express';
 
 @ApiTags('common')
 @Controller('common')
@@ -180,103 +176,6 @@ export class CommonController {
       return await this.bcbService.updateAccount(cta, payload);
     } catch (error) {
       return this.bcbService.buildErrorResponse(error);
-    }
-  }
-
-  @ApiOperation({ summary: 'Recibir notificación BCB' })
-  @ApiBody({
-    description: 'Datos de respuesta del QR procesado',
-    required: true,
-    schema: {
-      type: 'object',
-      properties: {
-        idQR: {
-          type: 'string',
-          example: '10000121715970417000',
-        },
-        idOrdenDestinatario: {
-          type: 'string',
-          example: '145266734545645630',
-        },
-        eif: {
-          type: 'string',
-          example: 'MLD1014',
-        },
-        ciNitOriginante: {
-          type: 'string',
-          example: '12345678',
-        },
-        nombreOriginante: {
-          type: 'string',
-          example: 'Juan Perez',
-        },
-        codMoneda: {
-          type: 'string',
-          example: 'BOB',
-        },
-        importe: {
-          type: 'number',
-          example: 20000,
-        },
-        cuentaOrigen: {
-          type: 'string',
-          example: '233333444',
-        },
-        eifOrigen: {
-          type: 'string',
-          example: 'MLD1014',
-        },
-        tipoNotificacion: {
-          type: 'string',
-          example: 'T1',
-        },
-        estado: {
-          type: 'string',
-          enum: ['PROCESADO', 'RECHAZADO', 'NO PROCESADO'],
-          example: 'PROCESADO',
-        },
-        metaData: {
-          type: 'object',
-          example: {
-            origen: 'sales-service',
-            schema: 'sales',
-            message: 'bcbPaymentNotification',
-            tipo: 'venta-qr',
-            personId: '123',
-          },
-          additionalProperties: true,
-        },
-      },
-      required: ['idQR', 'eif', 'codMoneda', 'estado', 'metaData'],
-    },
-  })
-  @ApiHeader({
-    name: 'Authorization',
-    required: false,
-    description: 'Validación Bearer temporalmente desactivada',
-  })
-  @Post('pagos/notificacion/notificacionPago')
-  async paymentNotification(
-    @Body() data: BcbPaymentNotificationDto,
-    @Headers('authorization') authorization: string | undefined,
-    @Req() request: Request,
-  ) {
-    this.bcbService.validateNotificationAccess(
-      authorization,
-      request.socket.remoteAddress,
-    );
-
-    try {
-      return await this.bcbService.processPaymentNotification(data);
-    } catch (error) {
-      const response = this.bcbService.buildErrorResponse(error);
-      const data = response.data;
-
-      return {
-        error: true,
-        message: response.message,
-        data,
-      };
     }
   }
 

@@ -1,23 +1,13 @@
-import {
-  Controller,
-  Post,
-  Body,
-  UseGuards,
-} from '@nestjs/common';
-import { MessagePattern, Payload } from '@nestjs/microservices';
-import { ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 
-import { NatsService, BcbService } from 'src/common';
+import { BcbPaymentNotificationDto, BcbService } from 'src/common';
 import { AuthBcbGuard } from 'src/auth/guards';
 
 @ApiTags('notifications')
 @Controller('notifications')
 export class NotificationsController {
-
-  constructor(
-    private readonly nats: NatsService,
-    private readonly bcbService: BcbService,
-  ) {}
+  constructor(private readonly bcbService: BcbService) {}
 
   @ApiOperation({ summary: 'Recibir notificación BCB' })
   @ApiBody({
@@ -74,20 +64,22 @@ export class NotificationsController {
         metaData: {
           type: 'object',
           example: {
-            key: 'value',
+            origen: 'sales-service',
             schema: 'sales',
-            message: 'afterPayment',
+            message: 'bcbPaymentNotification',
+            tipo: 'venta-qr',
+            personId: '123',
           },
           additionalProperties: true,
         },
       },
-      required: ['idQR', 'eif', 'codMoneda', 'estado'],
+      required: ['idQR', 'eif', 'codMoneda', 'estado', 'metaData'],
     },
   })
+  @ApiBearerAuth('msp')
   @UseGuards(AuthBcbGuard)
   @Post('paymentQr')
-  async paymentNotification(@Body() body: any) {
-    return await this.nats.firstValue('sales.generateQr', body);
+  async paymentNotification(@Body() data: BcbPaymentNotificationDto) {
+    return await this.bcbService.processPaymentNotification(data);
   }
-
 }
