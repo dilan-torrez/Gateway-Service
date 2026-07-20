@@ -10,11 +10,12 @@ import {
   BcbService,
 } from 'src/common';
 import { CommonController } from './common.controller';
+import { NotificationsController } from './notifications.controller';
 import { HttpModule } from '@nestjs/axios';
 
 @Global()
 @Module({
-  controllers: [CommonController],
+  controllers: [CommonController, NotificationsController],
   imports: [
     ClientsModule.register([
       {

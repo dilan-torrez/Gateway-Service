@@ -1,0 +1,93 @@
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+} from '@nestjs/common';
+import { MessagePattern, Payload } from '@nestjs/microservices';
+import { ApiBody, ApiConsumes, ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
+
+import { NatsService, BcbService } from 'src/common';
+import { AuthBcbGuard } from 'src/auth/guards';
+
+@ApiTags('notifications')
+@Controller('notifications')
+export class NotificationsController {
+
+  constructor(
+    private readonly nats: NatsService,
+    private readonly bcbService: BcbService,
+  ) {}
+
+  @ApiOperation({ summary: 'Recibir notificación BCB' })
+  @ApiBody({
+    description: 'Datos de respuesta del QR procesado',
+    required: true,
+    schema: {
+      type: 'object',
+      properties: {
+        idQR: {
+          type: 'string',
+          example: '10000121715970417000',
+        },
+        idOrdenDestinatario: {
+          type: 'string',
+          example: '145266734545645630',
+        },
+        eif: {
+          type: 'string',
+          example: 'MLD1014',
+        },
+        ciNitOriginante: {
+          type: 'string',
+          example: '12345678',
+        },
+        nombreOriginante: {
+          type: 'string',
+          example: 'Juan Perez',
+        },
+        codMoneda: {
+          type: 'string',
+          example: 'BOB',
+        },
+        importe: {
+          type: 'number',
+          example: 20000,
+        },
+        cuentaOrigen: {
+          type: 'string',
+          example: '233333444',
+        },
+        eifOrigen: {
+          type: 'string',
+          example: 'MLD1014',
+        },
+        tipoNotificacion: {
+          type: 'string',
+          example: 'T1',
+        },
+        estado: {
+          type: 'string',
+          enum: ['PROCESADO', 'RECHAZADO', 'NO PROCESADO'],
+          example: 'PROCESADO',
+        },
+        metaData: {
+          type: 'object',
+          example: {
+            key: 'value',
+            schema: 'sales',
+            message: 'afterPayment',
+          },
+          additionalProperties: true,
+        },
+      },
+      required: ['idQR', 'eif', 'codMoneda', 'estado'],
+    },
+  })
+  @UseGuards(AuthBcbGuard)
+  @Post('paymentQr')
+  async paymentNotification(@Body() body: any) {
+    return await this.nats.firstValue('sales.generateQr', body);
+  }
+
+}
