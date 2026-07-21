@@ -1,9 +1,4 @@
-import {
-  BadRequestException,
-  HttpException,
-  HttpStatus,
-  Injectable,
-} from '@nestjs/common';
+import { BadRequestException, HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import * as crypto from 'crypto';
@@ -82,50 +77,12 @@ export class BcbService {
     };
   }
 
-  async notifications(data: BcbPaymentNotificationDto) {
-    const errors = this.validateNotificationPayload(data);
-
-    if (errors.length > 0) {
-      throw new BadRequestException({
-        finalizado: false,
-        mensaje: 'Notificación BCB inválida',
-        errores: errors,
-      });
-    }
-
-    return {
-      finalizado: true,
-      mensaje: 'Notificación BCB recibida correctamente',
-      datos: data,
-      serviceStatus: true,
-      statusValidation: {
-        isValid: true,
-        status: data.estado,
-        isPaid: data.estado === BcbQrStatus.PROCESADO,
-        isRejected: data.estado === BcbQrStatus.RECHAZADO,
-        isPending: data.estado === BcbQrStatus.NO_PROCESADO,
-        allowedStatuses: this.validQrStatuses,
-      },
-    };
-  }
-
   async processPaymentNotification(payload: BcbPaymentNotificationDto) {
-    const bcbValidation = await this.notifications(payload);
-    const salesResult = await this.nats.firstValue('sales.bcbPaymentNotification', {
-      notification: payload,
-      bcbValidation,
-    });
-    const data = {
-      notification: payload,
-      statusValidation: bcbValidation.statusValidation,
-      sale: salesResult?.data ?? null,
-    };
+    const schema = String(payload.metaData?.schema ?? '');
+    const message = String(payload.metaData?.message ?? '');
+    const pattern = `${schema}.${message}`;
 
-    return {
-      error: Boolean(salesResult?.error),
-      message: salesResult?.message ?? bcbValidation.mensaje,
-      data,
-    };
+    return await this.nats.firstValue(pattern, payload);
   }
 
   buildErrorResponse(error: any) {
@@ -446,23 +403,6 @@ export class BcbService {
       isPending: statuses.length === 0 || statuses.includes(BcbQrStatus.NO_PROCESADO),
       allowedStatuses: this.validQrStatuses,
     };
-  }
-
-  private validateNotificationPayload(data: BcbPaymentNotificationDto) {
-    const errors: string[] = [];
-    const requiredFields = ['idQR', 'eif', 'codMoneda', 'estado'];
-
-    requiredFields.forEach((field) => {
-      if (!data?.[field]) {
-        errors.push(`${field}: es obligatorio`);
-      }
-    });
-
-    if (data?.estado && !this.validQrStatuses.includes(data.estado)) {
-      errors.push(`estado: debe ser uno de ${this.validQrStatuses.join(', ')}`);
-    }
-
-    return errors;
   }
 
   private throwBcbHttpError(error: any): never {
