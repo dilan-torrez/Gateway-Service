@@ -240,7 +240,7 @@ export class SalesController {
         ...dataSale.data,
         metadata: {
           ...dataSale.data.metadata,
-          generatedBy: req.user,
+          generatedBy: req.user?.username,
         },
       },
     );
