@@ -31,10 +31,10 @@ const COLORS = {
 const SALES_TABLE_WIDTHS = [
   48, // Código
   68, // Fecha y hora
-  128, // Titular
-  128, // Servicio
+  142, // Titular
+  124, // Servicio
   32, // Cantidad
-  44, // Precio
+  40, // Precio
   64, // Tipo de pago
   48, // Total
   70, // Recepcionista
@@ -63,7 +63,7 @@ export function reportSales(data: SalesListData): TDocumentDefinitions {
       color: COLORS.text,
     },
 
-    content: [buildSalesContent(data.sales, data.totalItems)],
+    content: [buildSalesContent(data.sales)],
 
     styles: {
       tableHeader: {
@@ -189,25 +189,9 @@ function buildPageFooter(
   } as Content;
 }
 
-function buildSalesContent(
-  sales: SalesListItem[],
-  totalItems: number
-): Content {
+function buildSalesContent(sales: SalesListItem[]): Content {
   return {
-    stack: [
-      {
-        columns: [
-          {
-            text: `Total de registros: ${totalItems}`,
-            style: "sectionCounter",
-          },
-        ],
-
-        margin: [0, 0, 0, 4],
-      },
-
-      buildSalesTable(sales),
-    ],
+    stack: [buildSalesTable(sales)],
   } as Content;
 }
 
@@ -320,15 +304,15 @@ function rowCells(sale: SalesListItem, index: number) {
 
     cell(formatDateTime(sale.receptionDate), "center", true),
 
-    cell(sale.principalCustomer, "left"),
+    cell(sale.principalCustomer, "left", true),
 
-    cell(sale.service, "left"),
+    cell(sale.service, "left", true),
 
     cell(String(sale.amount), "center", true),
 
-    cell(sale.price, "right", true),
+    cell(sale.price, "center", true),
 
-    cell(sale.paymentType, "left"),
+    cell(sale.paymentType, "center", true),
 
     cell(sale.total, "right", true),
 
