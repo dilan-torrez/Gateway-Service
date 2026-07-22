@@ -13,6 +13,7 @@ import {
   Body
 } from '@nestjs/common';
 import {
+  ApiBearerAuth,
   ApiOperation,
   ApiParam,
   ApiProduces,
@@ -27,6 +28,7 @@ import { ReportsSalesService } from 'src/reports/services/reports.sales.service'
 import { AuthGuard } from 'src/auth/guards';
 
 @ApiTags('sales')
+@ApiBearerAuth('msp')
 @UseGuards(AuthGuard)
 @Controller('sales')
 export class SalesController {
