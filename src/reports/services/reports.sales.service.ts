@@ -4,7 +4,7 @@ import { SalesListData } from '../interfaces/sales/sales-list-data.interface';
 import { SalesReceiptData } from '../interfaces/sales/sales-receipt-data.interface';
 import { PdfmakeRendererService } from '../renderer/pdfmake-renderer.service';
 import { buildSalesHeaderPreview, SalesHeaderPreviewData } from '../templates/sales/cabeceras';
-import { findSalesListTemplate } from '../templates/sales/lists';
+import { findSalesListTemplate } from '../templates/sales/reports';
 import { findSalesReceiptTemplate } from '../templates/sales/receipts';
 import { buildReceiptFileName, buildSalesListFileName } from '../utils/report-file-name.util';
 
