@@ -33,8 +33,8 @@ import { ReportsSalesService } from 'src/reports/services/reports.sales.service'
 import { AuthGuard } from 'src/auth/guards';
 
 @ApiTags('sales')
-// @ApiBearerAuth('msp')
-// @UseGuards(AuthGuard)
+@ApiBearerAuth('msp')
+@UseGuards(AuthGuard)
 @Controller('sales')
 export class SalesController {
   constructor(
