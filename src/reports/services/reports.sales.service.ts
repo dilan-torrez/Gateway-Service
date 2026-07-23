@@ -1,18 +1,23 @@
 import { Injectable } from '@nestjs/common';
-import { ReportRenderResult } from '../interfaces/common/report-render-result.interface';
+import { ReportFileResult } from '../interfaces/common/report-file-result.interface';
+import { PDF_CONTENT_TYPE, XLSX_CONTENT_TYPE } from '../interfaces/common/report-format.type';
 import { SalesListData } from '../interfaces/sales/sales-list-data.interface';
 import { SalesReceiptData } from '../interfaces/sales/sales-receipt-data.interface';
+import { ExceljsRendererService } from '../renderer/exceljs-renderer.service';
 import { PdfmakeRendererService } from '../renderer/pdfmake-renderer.service';
 import { buildSalesHeaderPreview, SalesHeaderPreviewData } from '../templates/sales/cabeceras';
-import { findSalesListTemplate } from '../templates/sales/lists';
+import { findSalesListExcelTemplate, findSalesListPdfTemplate } from '../templates/sales/reports';
 import { findSalesReceiptTemplate } from '../templates/sales/receipts';
 import { buildReceiptFileName, buildSalesListFileName } from '../utils/report-file-name.util';
 
 @Injectable()
 export class ReportsSalesService {
-  constructor(private readonly pdfMake: PdfmakeRendererService) { }
+  constructor(
+    private readonly pdfMake: PdfmakeRendererService,
+    private readonly exceljs: ExceljsRendererService,
+  ) {}
 
-  async generateSalesHeaderPreview(): Promise<ReportRenderResult> {
+  async generateSalesHeaderPreview(): Promise<ReportFileResult> {
     const previewData: SalesHeaderPreviewData = {
       institutionName: 'MUTUAL DE SERVICIOS AL POLICIA',
       institutionShortName: 'MUSERPOL',
@@ -30,40 +35,58 @@ export class ReportsSalesService {
     return {
       buffer,
       fileName: 'sales-report-header-preview.pdf',
-      contentType: 'application/pdf',
+      contentType: PDF_CONTENT_TYPE,
       disposition: 'inline',
     };
   }
 
-  async pdfMakeSaleReceipt(data: SalesReceiptData): Promise<ReportRenderResult> {
+  async generateSalesReceiptPdf(data: SalesReceiptData): Promise<ReportFileResult> {
     const template = findSalesReceiptTemplate();
 
-    // Aqui se arma el recibo con los datos de la venta y la plantilla elegida.
     const documentDefinition = template(data);
-
-    // Aqui se convierte el recibo armado a PDF.
     const buffer = await this.pdfMake.generatePdfBuffer(documentDefinition);
     const receiptNumber = data.sale.code;
 
     return {
       buffer,
       fileName: buildReceiptFileName(receiptNumber),
-      contentType: 'application/pdf',
+      contentType: PDF_CONTENT_TYPE,
       disposition: 'inline',
     };
   }
 
-  async pdfMakeSalesList(data: SalesListData): Promise<ReportRenderResult> {
-    const template = findSalesListTemplate();
+  async generateSalesListPdf(data: SalesListData): Promise<ReportFileResult> {
+    const template = findSalesListPdfTemplate();
 
     const documentDefinition = template(data);
     const buffer = await this.pdfMake.generatePdfBuffer(documentDefinition);
 
     return {
       buffer,
-      fileName: buildSalesListFileName(data.filters.dateFrom, data.filters.dateTo),
-      contentType: 'application/pdf',
+      fileName: buildSalesListFileName(data.filters.dateFrom, data.filters.dateTo, 'pdf'),
+      contentType: PDF_CONTENT_TYPE,
       disposition: 'inline',
     };
+  }
+
+  async generateSalesListXlsx(data: SalesListData): Promise<ReportFileResult> {
+    const template = findSalesListExcelTemplate();
+    const workbook = template(data);
+    const buffer = await this.exceljs.generateXlsxBuffer(workbook);
+
+    return {
+      buffer,
+      fileName: buildSalesListFileName(data.filters.dateFrom, data.filters.dateTo, 'xlsx'),
+      contentType: XLSX_CONTENT_TYPE,
+      disposition: 'attachment',
+    };
+  }
+
+  async pdfMakeSaleReceipt(data: SalesReceiptData): Promise<ReportFileResult> {
+    return this.generateSalesReceiptPdf(data);
+  }
+
+  async pdfMakeSalesList(data: SalesListData): Promise<ReportFileResult> {
+    return this.generateSalesListPdf(data);
   }
 }

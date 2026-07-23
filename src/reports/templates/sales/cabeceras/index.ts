@@ -3,4 +3,6 @@ export {
   buildSalesHeaderPreview,
   type SalesReportHeaderData,
   type SalesHeaderPreviewData,
-} from './sales-report-header.template';
+} from './headerPdfTemplate';
+export { buildSalesExcelHeader, EXCEL_HEADER_LAST_ROW } from './headerExcelTemplate';
+export { buildSalesListHeaderData } from './salesHeaderData';

@@ -3,7 +3,10 @@ import {
   SalesListData,
   SalesListItem,
 } from "../../../interfaces/sales/sales-list-data.interface";
-import { buildSalesReportHeader } from "../cabeceras";
+import {
+  buildSalesListHeaderData,
+  buildSalesReportHeader,
+} from "../cabeceras";
 
 const PAGE_WIDTH = 792;
 const PAGE_HORIZONTAL_MARGIN = 40;
@@ -31,10 +34,10 @@ const COLORS = {
 const SALES_TABLE_WIDTHS = [
   48, // Código
   68, // Fecha y hora
-  128, // Titular
-  128, // Servicio
+  142, // Titular
+  124, // Servicio
   32, // Cantidad
-  44, // Precio
+  40, // Precio
   64, // Tipo de pago
   48, // Total
   70, // Recepcionista
@@ -63,7 +66,7 @@ export function reportSales(data: SalesListData): TDocumentDefinitions {
       color: COLORS.text,
     },
 
-    content: [buildSalesContent(data.sales, data.totalItems)],
+    content: [buildSalesContent(data.sales)],
 
     styles: {
       tableHeader: {
@@ -106,23 +109,11 @@ function buildPageHeader(data: SalesListData): Content {
 
     stack: [
       buildSalesReportHeader({
-        institutionName: "MUTUAL DE SERVICIOS AL POLICIA",
-
-        institutionShortName: '"MUSERPOL"',
-
-        title: "REPORTE DE VENTAS",
+        ...buildSalesListHeaderData(data),
 
         pageWidth: PAGE_WIDTH,
 
         pageHorizontalMargin: PAGE_HORIZONTAL_MARGIN,
-
-        generatedAt: data.metadata?.generatedAt ?? new Date(),
-
-        generatedBy: data.metadata?.generatedBy,
-
-        dateFrom: data.filters.dateFrom,
-
-        dateTo: data.filters.dateTo,
       }),
     ],
   } as Content;
@@ -189,25 +180,9 @@ function buildPageFooter(
   } as Content;
 }
 
-function buildSalesContent(
-  sales: SalesListItem[],
-  totalItems: number
-): Content {
+function buildSalesContent(sales: SalesListItem[]): Content {
   return {
-    stack: [
-      {
-        columns: [
-          {
-            text: `Total de registros: ${totalItems}`,
-            style: "sectionCounter",
-          },
-        ],
-
-        margin: [0, 0, 0, 4],
-      },
-
-      buildSalesTable(sales),
-    ],
+    stack: [buildSalesTable(sales)],
   } as Content;
 }
 
@@ -320,15 +295,15 @@ function rowCells(sale: SalesListItem, index: number) {
 
     cell(formatDateTime(sale.receptionDate), "center", true),
 
-    cell(sale.principalCustomer, "left"),
+    cell(sale.principalCustomer, "left", true),
 
-    cell(sale.service, "left"),
+    cell(sale.service, "left", true),
 
     cell(String(sale.amount), "center", true),
 
-    cell(sale.price, "right", true),
+    cell(sale.price, "center", true),
 
-    cell(sale.paymentType, "left"),
+    cell(sale.paymentType, "center", true),
 
     cell(sale.total, "right", true),
 
@@ -363,8 +338,6 @@ function formatDateTime(value: string | Date | null | undefined): string {
   }
 
   return new Intl.DateTimeFormat("es-BO", {
-    timeZone: "America/La_Paz",
-
     day: "2-digit",
 
     month: "2-digit",

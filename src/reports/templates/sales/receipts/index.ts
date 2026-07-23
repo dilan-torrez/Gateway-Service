@@ -1,6 +1,6 @@
 import { TDocumentDefinitions } from 'pdfmake/interfaces';
 import { SalesReceiptData } from '../../../interfaces/sales/sales-receipt-data.interface';
-import { reciboFormal } from './reciboFormal';
+import { reciboFormal } from './reciboFormalPdf';
 
 type SalesReceiptBuilder = (data: SalesReceiptData) => TDocumentDefinitions;
 

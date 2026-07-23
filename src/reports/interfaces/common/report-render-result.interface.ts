@@ -1,6 +1,3 @@
-export interface ReportRenderResult {
-  buffer: Buffer;
-  fileName: string;
-  contentType: 'application/pdf';
-  disposition: 'inline' | 'attachment';
-}
+import { ReportFileResult } from './report-file-result.interface';
+
+export type ReportRenderResult = ReportFileResult;

@@ -13,6 +13,7 @@ import {
   Body
 } from '@nestjs/common';
 import {
+  ApiBearerAuth,
   ApiOperation,
   ApiParam,
   ApiProduces,
@@ -23,10 +24,16 @@ import {
 } from '@nestjs/swagger';
 import { Request, Response } from 'express';
 import { NatsService } from 'src/common';
+import {
+  PDF_CONTENT_TYPE,
+  ReportFormat,
+  XLSX_CONTENT_TYPE,
+} from 'src/reports/interfaces/common/report-format.type';
 import { ReportsSalesService } from 'src/reports/services/reports.sales.service';
 import { AuthGuard } from 'src/auth/guards';
 
 @ApiTags('sales')
+@ApiBearerAuth('msp')
 @UseGuards(AuthGuard)
 @Controller('sales')
 export class SalesController {
@@ -194,8 +201,8 @@ export class SalesController {
     res.send(receipt.buffer);
   }
 
-  @Get('reports/sales-list') // recibiremos dos entradas obligatorias q son las fechas
-  @ApiOperation({ summary: 'Generar lista de ventas en PDF' })
+  @Get('reports/sales-list')
+  @ApiOperation({ summary: 'Generar lista de ventas en PDF o Excel' })
   @ApiQuery({
     name: 'dateFrom',
     required: true,
@@ -206,10 +213,17 @@ export class SalesController {
     required: true,
     example: '2026-07-13',
   })
-  @ApiProduces('application/pdf')
+  @ApiQuery({
+    name: 'format',
+    required: false,
+    enum: ['pdf', 'xlsx'],
+    example: 'xlsx',
+    description: 'Formato de salida. El valor predeterminado es pdf.',
+  })
+  @ApiProduces(PDF_CONTENT_TYPE, XLSX_CONTENT_TYPE)
   @ApiResponse({
     status: 200,
-    description: 'PDF de la lista de ventas',
+    description: 'Archivo PDF o XLSX de la lista de ventas',
     schema: {
       type: 'string',
       format: 'binary',
@@ -218,6 +232,7 @@ export class SalesController {
   async salesList(
     @Query('dateFrom') dateFrom: string,
     @Query('dateTo') dateTo: string,
+    @Query('format') format: string | undefined,
     @Req() req: Request & { user?: { username?: string; name?: string } },
     @Res() res: Response,
   ) {
@@ -227,29 +242,36 @@ export class SalesController {
         message: 'Debe enviar dateFrom y dateTo para generar el reporte.',
       });
     }
-
+    const normalizedFormat = String(format ?? 'pdf')
+      .trim()
+      .toLowerCase();
+    if (!['pdf', 'xlsx'].includes(normalizedFormat)) {
+      throw new BadRequestException({
+        error: true,
+        message: 'El formato debe ser pdf o xlsx.',
+      });
+    }
     const dataSale = await this.nats.firstValue('sales.list', {
       dateFrom,
       dateTo,
     });
-
-    const receipt = await this.reportsSalesService.pdfMakeSalesList(
-      {
-        ...dataSale.data,
-        metadata: {
-          ...dataSale.data.metadata,
-          generatedBy: req.user,
-        },
+    const reportData = {
+      ...dataSale.data,
+      metadata: {
+        ...dataSale.data.metadata,
+        generatedBy: req.user?.username ?? req.user?.name,
       },
-    );
-
+    };
+    const report =
+      (normalizedFormat as ReportFormat) === 'xlsx'
+        ? await this.reportsSalesService.generateSalesListXlsx(reportData)
+        : await this.reportsSalesService.generateSalesListPdf(reportData);
     res.set({
-      'Content-Type': receipt.contentType,
-      'Content-Disposition': `${receipt.disposition}; filename="${receipt.fileName}"`,
-      'Content-Length': receipt.buffer.length,
+      'Content-Type': report.contentType,
+      'Content-Disposition': `${report.disposition}; filename="${report.fileName}"`,
+      'Content-Length': report.buffer.length,
     });
-
-    res.send(receipt.buffer);
+    res.send(report.buffer);
   }
 
   @Get(':qrId/qrImage')

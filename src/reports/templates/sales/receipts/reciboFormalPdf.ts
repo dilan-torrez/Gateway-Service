@@ -1045,8 +1045,6 @@ function adminDate(value: string | Date): string {
   }
 
   return new Intl.DateTimeFormat("es-BO", {
-    timeZone: "America/La_Paz",
-
     day: "2-digit",
 
     month: "2-digit",
