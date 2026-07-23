@@ -1,9 +1,3 @@
-export interface SalesReceiptResponse {
-  error: boolean;
-  message: string;
-  data: SalesReceiptData | null;
-}
-
 export interface SalesReceiptData {
   sale: {
     code: string | null;
