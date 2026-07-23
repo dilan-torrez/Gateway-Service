@@ -3,7 +3,10 @@ import {
   SalesListData,
   SalesListItem,
 } from "../../../interfaces/sales/sales-list-data.interface";
-import { buildSalesReportHeader } from "../cabeceras";
+import {
+  buildSalesListHeaderData,
+  buildSalesReportHeader,
+} from "../cabeceras";
 
 const PAGE_WIDTH = 792;
 const PAGE_HORIZONTAL_MARGIN = 40;
@@ -106,23 +109,11 @@ function buildPageHeader(data: SalesListData): Content {
 
     stack: [
       buildSalesReportHeader({
-        institutionName: "MUTUAL DE SERVICIOS AL POLICIA",
-
-        institutionShortName: '"MUSERPOL"',
-
-        title: "REPORTE DE VENTAS",
+        ...buildSalesListHeaderData(data),
 
         pageWidth: PAGE_WIDTH,
 
         pageHorizontalMargin: PAGE_HORIZONTAL_MARGIN,
-
-        generatedAt: data.metadata?.generatedAt ?? new Date(),
-
-        generatedBy: data.metadata?.generatedBy,
-
-        dateFrom: data.filters.dateFrom,
-
-        dateTo: data.filters.dateTo,
       }),
     ],
   } as Content;

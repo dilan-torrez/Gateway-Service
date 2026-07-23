@@ -8,7 +8,6 @@ import { ReportsSalesService } from './services/reports.sales.service';
 export class ReportsController {
   constructor(private readonly reportsSalesService: ReportsSalesService) {}
 
-  // Por analizar
   @Get('headers/preview')
   @ApiOperation({ summary: 'Vista previa de cabecera reutilizable de ventas' })
   @ApiResponse({ status: 200, description: 'PDF de vista previa de cabecera' })
@@ -23,4 +22,5 @@ export class ReportsController {
 
     res.send(preview.buffer);
   }
+  
 }
