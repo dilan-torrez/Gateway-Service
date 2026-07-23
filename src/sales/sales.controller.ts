@@ -190,7 +190,7 @@ export class SalesController {
       saleId,
     });
 
-    const receipt = await this.reportsSalesService.pdfMakeSaleReceipt(dataSale.data);
+    const receipt = await this.reportsSalesService.generateSalesReceiptPdf(dataSale.data);
 
     res.set({
       'Content-Type': receipt.contentType,

@@ -1,9 +1,3 @@
-export interface SalesListResponse {
-  error: boolean;
-  message: string;
-  data: SalesListData | null;
-}
-
 export interface SalesListData {
   sales: SalesListItem[];
   totalItems: number;

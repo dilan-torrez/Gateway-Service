@@ -6,8 +6,9 @@ import { SalesReceiptData } from '../interfaces/sales/sales-receipt-data.interfa
 import { ExceljsRendererService } from '../renderer/exceljs-renderer.service';
 import { PdfmakeRendererService } from '../renderer/pdfmake-renderer.service';
 import { buildSalesHeaderPreview, SalesHeaderPreviewData } from '../templates/sales/cabeceras';
-import { findSalesListExcelTemplate, findSalesListPdfTemplate } from '../templates/sales/reports';
-import { findSalesReceiptTemplate } from '../templates/sales/receipts';
+import { reciboFormal } from '../templates/sales/receipts/reciboFormalPdf';
+import { reportSalesExcel } from '../templates/sales/reports/reportSalesExcel';
+import { reportSales } from '../templates/sales/reports/reportSalesPdf';
 import { buildReceiptFileName, buildSalesListFileName } from '../utils/report-file-name.util';
 
 @Injectable()
@@ -41,9 +42,7 @@ export class ReportsSalesService {
   }
 
   async generateSalesReceiptPdf(data: SalesReceiptData): Promise<ReportFileResult> {
-    const template = findSalesReceiptTemplate();
-
-    const documentDefinition = template(data);
+    const documentDefinition = reciboFormal(data);
     const buffer = await this.pdfMake.generatePdfBuffer(documentDefinition);
     const receiptNumber = data.sale.code;
 
@@ -56,9 +55,7 @@ export class ReportsSalesService {
   }
 
   async generateSalesListPdf(data: SalesListData): Promise<ReportFileResult> {
-    const template = findSalesListPdfTemplate();
-
-    const documentDefinition = template(data);
+    const documentDefinition = reportSales(data);
     const buffer = await this.pdfMake.generatePdfBuffer(documentDefinition);
 
     return {
@@ -70,8 +67,7 @@ export class ReportsSalesService {
   }
 
   async generateSalesListXlsx(data: SalesListData): Promise<ReportFileResult> {
-    const template = findSalesListExcelTemplate();
-    const workbook = template(data);
+    const workbook = reportSalesExcel(data);
     const buffer = await this.exceljs.generateXlsxBuffer(workbook);
 
     return {
@@ -80,13 +76,5 @@ export class ReportsSalesService {
       contentType: XLSX_CONTENT_TYPE,
       disposition: 'attachment',
     };
-  }
-
-  async pdfMakeSaleReceipt(data: SalesReceiptData): Promise<ReportFileResult> {
-    return this.generateSalesReceiptPdf(data);
-  }
-
-  async pdfMakeSalesList(data: SalesListData): Promise<ReportFileResult> {
-    return this.generateSalesListPdf(data);
   }
 }
