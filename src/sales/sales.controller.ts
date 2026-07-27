@@ -289,4 +289,14 @@ export class SalesController {
       },
     }
   }
+
+  @Get('records/:personId')
+  @ApiResponse({
+    status: 200,
+    description: 'Obtener los registros de una persona por su ID',
+  })
+  async personRecords(@Param('personId', ParseIntPipe) personId: number) {
+    return this.nats.firstValue('sales.personSalesRecords', { personId });
+  }
 }
+
