@@ -11,7 +11,13 @@ import {
   ValidateIf,
 } from 'class-validator';
 
-const BCB_QR_STATUSES = ['PROCESADO', 'RECHAZADO', 'NO PROCESADO'] as const;
+export enum BcbQrStatus {
+  PROCESADO = 'PROCESADO',
+  RECHAZADO = 'RECHAZADO',
+  NO_PROCESADO = 'NO PROCESADO',
+}
+
+export const BCB_QR_STATUSES: BcbQrStatus[] = Object.values(BcbQrStatus);
 
 export class BcbPaymentNotificationDto {
   @IsString()
@@ -19,7 +25,7 @@ export class BcbPaymentNotificationDto {
   @MaxLength(50)
   idQR: string;
 
-  @ValidateIf((notification) => notification.estado === 'PROCESADO')
+  @ValidateIf((notification) => notification.estado === BcbQrStatus.PROCESADO)
   @IsString()
   @IsNotEmpty()
   @MaxLength(50)
@@ -45,7 +51,7 @@ export class BcbPaymentNotificationDto {
   @MaxLength(3)
   codMoneda: string;
 
-  @ValidateIf((notification) => notification.estado === 'PROCESADO')
+  @ValidateIf((notification) => notification.estado === BcbQrStatus.PROCESADO)
   @Type(() => Number)
   @IsNumber({ maxDecimalPlaces: 2 })
   @IsPositive()
@@ -68,7 +74,7 @@ export class BcbPaymentNotificationDto {
 
   @IsString()
   @IsIn(BCB_QR_STATUSES)
-  estado: (typeof BCB_QR_STATUSES)[number];
+  estado: BcbQrStatus;
 
   @IsObject()
   metaData: Record<string, unknown>;

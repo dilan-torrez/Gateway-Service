@@ -3,6 +3,7 @@ import { ApiBearerAuth, ApiBody, ApiOperation, ApiTags } from '@nestjs/swagger';
 
 import { BcbPaymentNotificationDto, BcbService } from 'src/common';
 import { AuthBcbGuard } from 'src/auth/guards';
+import { BCB_QR_STATUSES, BcbQrStatus } from './dto/bcb-payment-notification.dto';
 
 @ApiTags('notifications')
 @Controller('notifications')
@@ -58,8 +59,8 @@ export class NotificationsController {
         },
         estado: {
           type: 'string',
-          enum: ['PROCESADO', 'RECHAZADO', 'NO PROCESADO'],
-          example: 'PROCESADO',
+          enum: BCB_QR_STATUSES,
+          example: BcbQrStatus.PROCESADO,
         },
         metaData: {
           type: 'object',

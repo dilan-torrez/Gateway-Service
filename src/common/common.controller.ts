@@ -124,69 +124,45 @@ export class CommonController {
 
   @MessagePattern('bcb.generateQr')
   async generateQr(@Payload() data: any) {
-    try {
-      return await this.bcbService.generateQr(data);
-    } catch (error) {
-      return this.bcbService.buildErrorResponse(error);
-    }
+    return await this.handleBcbRequest(() => this.bcbService.generateQr(data));
   }
 
   @MessagePattern('bcb.qrStatus')
   async qrStatus(@Payload() data: string | { qrId?: string; idQr?: string; idQR?: string }) {
-    try {
+    return await this.handleBcbRequest(() => {
       const qrId = typeof data === 'string' ? data : (data?.qrId ?? data?.idQr ?? data?.idQR);
-      return await this.bcbService.qrStatus(qrId);
-    } catch (error) {
-      return this.bcbService.buildErrorResponse(error);
-    }
+      return this.bcbService.qrStatus(qrId);
+    });
   }
 
   @MessagePattern('bcb.status')
   async bcbStatusMessage() {
-    try {
-      return await this.bcbService.status();
-    } catch (error) {
-      return this.bcbService.buildErrorResponse(error);
-    }
+    return await this.handleBcbRequest(() => this.bcbService.status());
   }
 
   @MessagePattern('bcb.entities')
   async bcbEntitiesMessage() {
-    try {
-      return await this.bcbService.entities();
-    } catch (error) {
-      return this.bcbService.buildErrorResponse(error);
-    }
+    return await this.handleBcbRequest(() => this.bcbService.entities());
   }
 
   @MessagePattern('bcb.createAccount')
   async createBcbAccount(@Payload() data: any) {
-    try {
-      return await this.bcbService.createAccount(data);
-    } catch (error) {
-      return this.bcbService.buildErrorResponse(error);
-    }
+    return await this.handleBcbRequest(() => this.bcbService.createAccount(data));
   }
 
   @MessagePattern('bcb.updateAccount')
   async updateBcbAccount(@Payload() data: any) {
-    try {
+    return await this.handleBcbRequest(() => {
       const cta = data?.cta ?? data?.cuenta ?? data?.accountNumber;
       const payload = data?.data ?? data;
-      return await this.bcbService.updateAccount(cta, payload);
-    } catch (error) {
-      return this.bcbService.buildErrorResponse(error);
-    }
+      return this.bcbService.updateAccount(cta, payload);
+    });
   }
 
   @Get('bcb.entities')
   @ApiOperation({ summary: 'Obtener datos de entidad BCB' })
   async entities() {
-    try {
-      return await this.bcbService.entities();
-    } catch (error) {
-      return this.bcbService.buildErrorResponse(error);
-    }
+    return await this.handleBcbRequest(() => this.bcbService.entities());
   }
 
   @Post('bcb.accounts')
@@ -236,11 +212,7 @@ export class CommonController {
     },
   })
   async createAccount(@Body() data: any) {
-    try {
-      return await this.bcbService.createAccount(data);
-    } catch (error) {
-      return this.bcbService.buildErrorResponse(error);
-    }
+    return await this.handleBcbRequest(() => this.bcbService.createAccount(data));
   }
 
   @Put('bcb.accounts/:cta')
@@ -295,18 +267,18 @@ export class CommonController {
     },
   })
   async updateAccount(@Param('cta') cta: string, @Body() data: any) {
-    try {
-      return await this.bcbService.updateAccount(cta, data);
-    } catch (error) {
-      return this.bcbService.buildErrorResponse(error);
-    }
+    return await this.handleBcbRequest(() => this.bcbService.updateAccount(cta, data));
   }
 
   @Get('bcb.status')
   @ApiOperation({ summary: 'Verificar disponibilidad BCB' })
   async bcbStatus() {
+    return await this.handleBcbRequest(() => this.bcbService.status());
+  }
+
+  private async handleBcbRequest<T>(request: () => Promise<T>) {
     try {
-      return await this.bcbService.status();
+      return await request();
     } catch (error) {
       return this.bcbService.buildErrorResponse(error);
     }
