@@ -4,13 +4,49 @@ import { firstValueFrom } from 'rxjs';
 import * as crypto from 'crypto';
 import { bcbEnvs } from 'src/config/envs';
 import { NatsService } from './nats.service';
-import { BcbPaymentNotificationDto } from '../dto/bcb-payment-notification.dto';
+import {
+  BCB_QR_STATUSES,
+  BcbPaymentNotificationDto,
+  BcbQrStatus,
+} from '../dto/bcb-payment-notification.dto';
 
-export enum BcbQrStatus {
-  PROCESADO = 'PROCESADO',
-  RECHAZADO = 'RECHAZADO',
-  NO_PROCESADO = 'NO PROCESADO',
+export { BcbQrStatus };
+
+type BcbHttpMethod = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
+
+interface BcbSignatureConfig {
+  algorithm: string;
+  keyid: string;
+  secretkey: string;
+  headers: readonly string[];
 }
+
+const BCB_REQUEST_RETRIES = 2;
+const BCB_RETRY_DELAY_MS = 500;
+const BCB_REQUEST_TIMEOUT_MS = 15000;
+const BCB_STATUS_TIMEOUT_MS = 5000;
+const BCB_BODY_METHODS: readonly BcbHttpMethod[] = ['POST', 'PUT', 'PATCH'];
+const BCB_SIGNATURE_HEADERS = ['X-Date', 'X-Digest', 'X-Entity-Id'] as const;
+const BCB_RETRYABLE_ERROR_CODES = [
+  'ECONNABORTED',
+  'ECONNRESET',
+  'ECONNREFUSED',
+  'EAI_AGAIN',
+  'ETIMEDOUT',
+] as const;
+const BCB_UNAVAILABLE_HTTP_STATUSES: readonly number[] = [
+  HttpStatus.BAD_GATEWAY,
+  HttpStatus.SERVICE_UNAVAILABLE,
+  HttpStatus.GATEWAY_TIMEOUT,
+];
+const BCB_UNAVAILABLE_MESSAGE_PARTS = [
+  'bad gateway',
+  'service unavailable',
+  'cloudguard waf',
+  'invalid response from the host server',
+] as const;
+const BCB_UNAVAILABLE_MESSAGE =
+  'Servicio BCB fuera de servicio temporalmente. Intente nuevamente más tarde.';
 
 @Injectable()
 export class BcbService {
@@ -19,11 +55,7 @@ export class BcbService {
   private readonly bcbKeyId = bcbEnvs.bcbKeyId;
   private readonly bcbSecret = bcbEnvs.bcbSecret;
   private readonly bcbToken = bcbEnvs.bcbToken;
-  private readonly bcbRequestRetries = 2;
-  private readonly bcbRetryDelayMs = 500;
-  private readonly validQrStatuses: string[] = Object.values(BcbQrStatus);
-  private readonly unavailableMessage =
-    'Servicio BCB fuera de servicio temporalmente. Intente nuevamente más tarde.';
+  private readonly validQrStatuses = [...BCB_QR_STATUSES];
 
   constructor(
     private readonly httpService: HttpService,
@@ -112,10 +144,7 @@ export class BcbService {
 
     this.validateFinalizedResponse(response);
 
-    return {
-      ...response,
-      serviceStatus: true,
-    };
+    return this.buildSuccessfulResponse(response);
   }
 
   async createAccount(data: any) {
@@ -124,10 +153,7 @@ export class BcbService {
 
     this.validateFinalizedResponse(response);
 
-    return {
-      ...response,
-      serviceStatus: true,
-    };
+    return this.buildSuccessfulResponse(response);
   }
 
   async updateAccount(cta: string, data: any) {
@@ -140,13 +166,10 @@ export class BcbService {
 
     this.validateFinalizedResponse(response);
 
-    return {
-      ...response,
-      serviceStatus: true,
-    };
+    return this.buildSuccessfulResponse(response);
   }
 
-  async send(method: 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE', endpoint: string, data?: any) {
+  async send(method: BcbHttpMethod, endpoint: string, data?: any) {
     try {
       this.validateConfig();
 
@@ -158,7 +181,7 @@ export class BcbService {
 
       const currentDate = new Date().toUTCString();
 
-      const hasBody = ['POST', 'PUT', 'PATCH'].includes(method);
+      const hasBody = BCB_BODY_METHODS.includes(method);
       const bodyString = hasBody ? JSON.stringify(data ?? {}) : undefined;
 
       const digestInput = hasBody ? bodyString : this.buildSigningPath(path);
@@ -175,7 +198,7 @@ export class BcbService {
           algorithm: 'HmacSHA256',
           keyid: this.bcbKeyId,
           secretkey: this.bcbSecret,
-          headers: ['X-Date', 'X-Digest', 'X-Entity-Id'],
+          headers: BCB_SIGNATURE_HEADERS,
         },
         headerHash,
       );
@@ -192,7 +215,7 @@ export class BcbService {
         url: this.buildUrl(path),
         headers,
         data: bodyString,
-        timeout: 15000,
+        timeout: BCB_REQUEST_TIMEOUT_MS,
         transformRequest: [(requestData) => requestData],
       });
 
@@ -217,12 +240,7 @@ export class BcbService {
   }
 
   private async computeHttpSignature(
-    config: {
-      algorithm: string;
-      keyid: string;
-      secretkey: string;
-      headers: string[];
-    },
+    config: BcbSignatureConfig,
     headerHash: Record<string, string>,
   ): Promise<string> {
     let signingBase = '';
@@ -253,7 +271,7 @@ export class BcbService {
       const response$ = this.httpService.request({
         method: 'GET',
         url: this.buildUrl('/'),
-        timeout: 5000,
+        timeout: BCB_STATUS_TIMEOUT_MS,
       });
 
       const { data, status } = await this.requestWithRetry(() => firstValueFrom(response$));
@@ -281,10 +299,7 @@ export class BcbService {
 
       this.validateFinalizedResponse(data);
 
-      return {
-        ...data,
-        serviceStatus: true,
-      };
+      return this.buildSuccessfulResponse(data);
     } catch (error: any) {
       this.throwBcbHttpError(error);
     }
@@ -374,6 +389,13 @@ export class BcbService {
     return `${url.pathname}${url.search}`;
   }
 
+  private buildSuccessfulResponse(response: any) {
+    return {
+      ...response,
+      serviceStatus: true,
+    };
+  }
+
   private validateFinalizedResponse(response: any) {
     if (response && typeof response === 'object' && response.finalizado === false) {
       throw new HttpException(response, HttpStatus.BAD_GATEWAY);
@@ -390,7 +412,7 @@ export class BcbService {
     const orders = Array.isArray(response?.datos?.ordenes) ? response.datos.ordenes : [];
     const statuses = orders.map((order: any) => order?.estado).filter(Boolean);
     const invalidStatuses = statuses.filter(
-      (status: string) => !this.validQrStatuses.includes(status),
+      (status: string) => !this.validQrStatuses.includes(status as BcbQrStatus),
     );
 
     return {
@@ -412,11 +434,7 @@ export class BcbService {
       const responseMessage = this.extractBcbErrorMessage(response);
 
       if (
-        [
-          HttpStatus.BAD_GATEWAY,
-          HttpStatus.SERVICE_UNAVAILABLE,
-          HttpStatus.GATEWAY_TIMEOUT,
-        ].includes(status) ||
+        BCB_UNAVAILABLE_HTTP_STATUSES.includes(status) ||
         this.isUnavailableBcbError(error, responseMessage)
       ) {
         this.throwUnavailableBcbException(responseMessage);
@@ -430,9 +448,7 @@ export class BcbService {
     const responseMessage = this.extractBcbErrorMessage(responseData);
 
     if (
-      [HttpStatus.BAD_GATEWAY, HttpStatus.SERVICE_UNAVAILABLE, HttpStatus.GATEWAY_TIMEOUT].includes(
-        status,
-      ) ||
+      BCB_UNAVAILABLE_HTTP_STATUSES.includes(status) ||
       this.isUnavailableBcbError(error, responseMessage)
     ) {
       this.throwUnavailableBcbException(responseMessage);
@@ -460,11 +476,7 @@ export class BcbService {
     }
 
     if (typeof responseData === 'string') {
-      const cleaned = responseData
-        .replace(/<[^>]*>/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-
+      const cleaned = this.cleanBcbMessage(responseData);
       return cleaned || null;
     }
 
@@ -475,13 +487,8 @@ export class BcbService {
     const normalizedMessage = String(message ?? error?.message ?? '').toLowerCase();
 
     return (
-      ['ECONNABORTED', 'ECONNRESET', 'ECONNREFUSED', 'EAI_AGAIN', 'ETIMEDOUT'].includes(
-        error?.code,
-      ) ||
-      normalizedMessage.includes('bad gateway') ||
-      normalizedMessage.includes('service unavailable') ||
-      normalizedMessage.includes('cloudguard waf') ||
-      normalizedMessage.includes('invalid response from the host server')
+      BCB_RETRYABLE_ERROR_CODES.includes(error?.code) ||
+      this.isUnavailableBcbMessage(normalizedMessage)
     );
   }
 
@@ -490,7 +497,7 @@ export class BcbService {
       {
         finalizado: false,
         serviceStatus: false,
-        mensaje: this.unavailableMessage,
+        mensaje: BCB_UNAVAILABLE_MESSAGE,
         detalle: detail,
       },
       HttpStatus.SERVICE_UNAVAILABLE,
@@ -498,39 +505,44 @@ export class BcbService {
   }
 
   private normalizeBcbErrorMessage(message: any) {
+    const cleaned = this.cleanBcbMessage(message);
+
+    if (this.isUnavailableBcbMessage(cleaned)) {
+      return BCB_UNAVAILABLE_MESSAGE;
+    }
+
+    return cleaned || BCB_UNAVAILABLE_MESSAGE;
+  }
+
+  private cleanBcbMessage(message: any): string {
     const normalized = Array.isArray(message) ? message.join(', ') : String(message ?? '');
-    const cleaned = normalized
+
+    return normalized
       .replace(/<[^>]*>/g, ' ')
       .replace(/\s+/g, ' ')
       .trim();
-    const lowerMessage = cleaned.toLowerCase();
+  }
 
-    if (
-      lowerMessage.includes('bad gateway') ||
-      lowerMessage.includes('service unavailable') ||
-      lowerMessage.includes('cloudguard waf') ||
-      lowerMessage.includes('invalid response from the host server')
-    ) {
-      return this.unavailableMessage;
-    }
+  private isUnavailableBcbMessage(message: string): boolean {
+    const normalizedMessage = message.toLowerCase();
 
-    return cleaned || this.unavailableMessage;
+    return BCB_UNAVAILABLE_MESSAGE_PARTS.some((part) => normalizedMessage.includes(part));
   }
 
   private async requestWithRetry<T>(request: () => Promise<T>): Promise<T> {
     let lastError: any;
 
-    for (let attempt = 0; attempt <= this.bcbRequestRetries; attempt++) {
+    for (let attempt = 0; attempt <= BCB_REQUEST_RETRIES; attempt++) {
       try {
         return await request();
       } catch (error) {
         lastError = error;
 
-        if (!this.isRetryableBcbError(error) || attempt === this.bcbRequestRetries) {
+        if (!this.isRetryableBcbError(error) || attempt === BCB_REQUEST_RETRIES) {
           throw error;
         }
 
-        await this.delay(this.bcbRetryDelayMs * (attempt + 1));
+        await this.delay(BCB_RETRY_DELAY_MS * (attempt + 1));
       }
     }
 
@@ -542,9 +554,7 @@ export class BcbService {
       return false;
     }
 
-    return ['ECONNABORTED', 'ECONNRESET', 'ECONNREFUSED', 'EAI_AGAIN', 'ETIMEDOUT'].includes(
-      error?.code,
-    );
+    return BCB_RETRYABLE_ERROR_CODES.includes(error?.code);
   }
 
   private delay(ms: number): Promise<void> {

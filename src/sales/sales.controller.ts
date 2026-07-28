@@ -299,4 +299,3 @@ export class SalesController {
     return this.nats.firstValue('sales.personSalesRecords', { personId });
   }
 }
-
