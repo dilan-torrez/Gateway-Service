@@ -2,6 +2,7 @@ import {
   BadRequestException,
   Controller,
   Get,
+  NotFoundException,
   Param,
   ParseIntPipe,
   Query,
@@ -190,6 +191,12 @@ export class SalesController {
       saleId,
     });
 
+    if (dataSale?.error || !dataSale?.data) {
+      throw new NotFoundException(
+        dataSale?.message ?? `La venta con el ID ${saleId} no existe.`,
+      );
+    }
+
     const receipt = await this.reportsSalesService.generateSalesReceiptPdf(dataSale.data);
 
     res.set({
@@ -299,4 +306,3 @@ export class SalesController {
     return this.nats.firstValue('sales.personSalesRecords', { personId });
   }
 }
-
