@@ -2,7 +2,6 @@ import {
   BadRequestException,
   Controller,
   Get,
-  NotFoundException,
   Param,
   ParseIntPipe,
   Query,
@@ -190,12 +189,6 @@ export class SalesController {
     const dataSale = await this.nats.firstValue('sales.voucherPdf', {
       saleId,
     });
-
-    if (dataSale?.error || !dataSale?.data) {
-      throw new NotFoundException(
-        dataSale?.message ?? `La venta con el ID ${saleId} no existe.`,
-      );
-    }
 
     const receipt = await this.reportsSalesService.generateSalesReceiptPdf(dataSale.data);
 
