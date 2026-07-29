@@ -406,7 +406,7 @@ function buildMetaCell(
   return {
     border: [false, false, false, false],
 
-    margin: [0, 15, 0, 0],
+    margin: [0, 15.4, 0, 0],
 
     stack: [
       {
@@ -419,22 +419,22 @@ function buildMetaCell(
         alignment: "center",
 
         color: COLORS.primary,
-
-        margin: [0, 0, 0, 2],
       },
 
       {
         table: {
-          widths: [39, "*"],
+          widths: ["*", "*"],
 
           body: [
-            metaRow("Fecha", formatDate(generatedAt)),
+            metaRow("Fecha:", formatDate(generatedAt)),
 
-            metaRow("Hora", formatTime(generatedAt)),
+            metaRow("Hora:", formatTime(generatedAt)),
 
-            metaRow("Usuario", truncateText(fallback(data.generatedBy), 22)),
+            metaRow("Usuario:", truncateText(fallback(data.generatedBy), 22)),
           ],
         },
+
+        alignment: "center",
 
         layout: metaCardLayout(),
       },
