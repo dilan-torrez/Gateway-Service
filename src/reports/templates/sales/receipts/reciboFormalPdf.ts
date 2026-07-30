@@ -524,7 +524,7 @@ function buildProductsBlock(data: SalesReceiptData): Content {
   const body: unknown[][] = [
     [
       {
-        text: "POR CONCEPTO DE",
+        text: data.products[0]?.groupName ?? "",
 
         style: "tableHeader",
 
@@ -651,7 +651,7 @@ function productRow(product: SaleProducts, index: number) {
 
   return [
     {
-      text: fallback(product.name),
+      text: fallback(product.name) + fileNumberText(product.fileNumber),
 
       style: "tableCell",
 
@@ -1252,6 +1252,12 @@ function fallback(value: unknown): string {
   }
 
   return String(value);
+}
+
+function fileNumberText(value: string | null | undefined): string {
+  const fileNumber = value?.trim();
+
+  return fileNumber ? ` - Nº ${fileNumber}` : "";
 }
 
 function fitSignatureName(value: string): string {
