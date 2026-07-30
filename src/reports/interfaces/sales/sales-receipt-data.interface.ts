@@ -48,7 +48,10 @@ export interface SalesReceiptData {
 }
 
 export interface SaleProducts {
+  productId: number;
   name: string;
+  groupName: string;
+  fileNumber: string | null;
   amount: number;
   price: string;
   total: string;
