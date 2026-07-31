@@ -420,7 +420,7 @@ function buildHeader(data: SalesReceiptData): Content {
           {
             border: [false, false, false, false],
             margin: [8, 4, 0, 0],
-            text: `Nº VEN-${saleCode(data)}`,
+            text: `Nº ${saleCode(data)}`,
             style: "saleCodeValue",
           },
         ],
@@ -521,43 +521,60 @@ function mainLabelCell(text: string) {
 }
 
 function buildProductsBlock(data: SalesReceiptData): Content {
+  const showFolderNumber = data.products.some(isFolderProduct);
+  const headerRow: unknown[] = [
+    {
+      text: "POR CONCEPTO DE",
+
+      style: "tableHeader",
+
+      alignment: "left",
+    },
+  ];
+
+  if (showFolderNumber) {
+    headerRow.push({
+      text: "NRO DE FOLDER",
+
+      style: "tableHeader",
+
+      alignment: "center",
+    });
+  }
+
+  headerRow.push(
+    {
+      text: "CANT.",
+
+      style: "tableHeader",
+    },
+    {
+      text: "P. UNIT.",
+
+      style: "tableHeader",
+
+      alignment: "right",
+    },
+    {
+      text: "SUBTOTAL",
+
+      style: "tableHeader",
+
+      alignment: "right",
+    }
+  );
+
   const body: unknown[][] = [
-    [
-      {
-        text: data.products[0]?.groupName ?? "",
+    headerRow,
 
-        style: "tableHeader",
-
-        alignment: "left",
-      },
-
-      {
-        text: "CANT.",
-
-        style: "tableHeader",
-      },
-
-      {
-        text: "P. UNIT.",
-
-        style: "tableHeader",
-
-        alignment: "right",
-      },
-
-      {
-        text: "SUBTOTAL",
-
-        style: "tableHeader",
-
-        alignment: "right",
-      },
-    ],
-
-    ...data.products.map((product, index) => productRow(product, index)),
+    ...data.products.map((product, index) =>
+      productRow(product, index, showFolderNumber)
+    ),
   ];
 
   if (data.products.length === 0) {
+    const columnCount = showFolderNumber ? 5 : 4;
+
     body.push([
       {
         text: "Sin servicios registrados.",
@@ -566,7 +583,7 @@ function buildProductsBlock(data: SalesReceiptData): Content {
 
         alignment: "center",
 
-        colSpan: 4,
+        colSpan: columnCount,
 
         margin: [0, 3, 0, 3],
       },
@@ -574,6 +591,7 @@ function buildProductsBlock(data: SalesReceiptData): Content {
       {},
       {},
       {},
+      ...(showFolderNumber ? [{}] : []),
     ]);
   }
 
@@ -585,7 +603,9 @@ function buildProductsBlock(data: SalesReceiptData): Content {
         table: {
           headerRows: 1,
 
-          widths: ["*", 38, 58, 64],
+          widths: showFolderNumber
+            ? ["*", 76, 38, 58, 64]
+            : ["*", 38, 58, 64],
 
           body,
 
@@ -646,18 +666,34 @@ function buildTotalBlock(data: SalesReceiptData): Content {
   } as Content;
 }
 
-function productRow(product: SaleProducts, index: number) {
+function productRow(
+  product: SaleProducts,
+  index: number,
+  showFolderNumber: boolean
+) {
   const fillColor = index % 2 === 0 ? COLORS.white : COLORS.rowAlternate;
 
-  return [
+  const row: unknown[] = [
     {
-      text: fallback(product.name) + fileNumberText(product.fileNumber),
+      text: fallback(product.name),
 
       style: "tableCell",
 
       fillColor,
     },
+  ];
 
+  if (showFolderNumber) {
+    row.push({
+      text: isFolderProduct(product) ? fallback(product.fileNumber) : "-",
+
+      style: "tableCell",
+
+      fillColor,
+    });
+  }
+
+  row.push(
     {
       text: fallback(product.amount),
 
@@ -680,8 +716,14 @@ function productRow(product: SaleProducts, index: number) {
       style: "tableCellRight",
 
       fillColor,
-    },
-  ];
+    }
+  );
+
+  return row;
+}
+
+function isFolderProduct(product: SaleProducts): boolean {
+  return product.groupName?.trim().toLowerCase() === "folders";
 }
 
 function buildSignatureBlock(data: SalesReceiptData): Content {
@@ -1252,12 +1294,6 @@ function fallback(value: unknown): string {
   }
 
   return String(value);
-}
-
-function fileNumberText(value: string | null | undefined): string {
-  const fileNumber = value?.trim();
-
-  return fileNumber ? ` - Nº ${fileNumber}` : "";
 }
 
 function fitSignatureName(value: string): string {
