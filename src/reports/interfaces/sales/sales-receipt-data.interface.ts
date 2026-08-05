@@ -17,7 +17,6 @@ export interface SalesReceiptData {
   };
   voucher: {
     receiptNumber: string | null;
-    fileNumber: string | null;
     description: string | null;
     paymentTypeState: string;
     depositDate: string | Date | null;
@@ -51,7 +50,7 @@ export interface SaleProducts {
   productId: number;
   name: string;
   groupName: string;
-  fileNumber: string | null;
+  fileNumbers: string[];
   amount: number;
   price: string;
   total: string;
