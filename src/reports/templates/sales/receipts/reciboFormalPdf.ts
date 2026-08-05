@@ -415,6 +415,16 @@ function buildMainInformation(data: SalesReceiptData): Content {
         ],
 
         [
+
+          mainLabelCell('DESDE LA ENTIDAD'),
+
+          {
+            text: paymentLocation(data),
+            style: 'mainValue',
+            alignment: 'left',
+            verticalAlignment: 'middle',
+          },
+
           mainLabelCell('FORMA DE PAGO'),
 
           {
@@ -422,15 +432,7 @@ function buildMainInformation(data: SalesReceiptData): Content {
             style: 'mainValue',
             verticalAlignment: 'middle',
           },
-
-          mainLabelCell('ENTIDAD'),
-
-          {
-            text: paymentLocation(data),
-            style: 'mainValue',
-            alignment: 'justify',
-            verticalAlignment: 'middle',
-          },
+          
         ],
       ],
     },
