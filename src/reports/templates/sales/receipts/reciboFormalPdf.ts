@@ -377,6 +377,7 @@ function buildMainInformation(data: SalesReceiptData): Content {
             text: `${customerName(data)}  ·  CI ${customerCi(data)}`,
             style: 'mainValue',
             colSpan: 3,
+            verticalAlignment: 'middle',
           },
           {},
           {},
@@ -391,6 +392,7 @@ function buildMainInformation(data: SalesReceiptData): Content {
             )}  ·  Tercero: ${yesNo(data.payer.isThirdParty)}`,
             style: 'mainValue',
             colSpan: 3,
+            verticalAlignment: 'middle',
           },
 
           {},
@@ -405,6 +407,7 @@ function buildMainInformation(data: SalesReceiptData): Content {
             style: 'mainValue',
             colSpan: 3,
             bold: true,
+            verticalAlignment: 'middle',
           },
 
           {},
@@ -417,6 +420,7 @@ function buildMainInformation(data: SalesReceiptData): Content {
           {
             text: paymentType(data),
             style: 'mainValue',
+            verticalAlignment: 'middle',
           },
 
           mainLabelCell('ENTIDAD'),
@@ -424,6 +428,8 @@ function buildMainInformation(data: SalesReceiptData): Content {
           {
             text: paymentLocation(data),
             style: 'mainValue',
+            alignment: 'justify',
+            verticalAlignment: 'middle',
           },
         ],
       ],
@@ -437,6 +443,8 @@ function mainLabelCell(text: string) {
   return {
     text,
     style: 'mainLabel',
+    alignment: 'right',
+    verticalAlignment: 'middle',
   };
 }
 
