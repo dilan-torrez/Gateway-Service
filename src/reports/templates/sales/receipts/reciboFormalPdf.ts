@@ -101,14 +101,14 @@ export function reciboFormal(data: SalesReceiptData): TDocumentDefinitions {
 
     styles: {
       institution: {
-        fontSize: 7.5,
+        fontSize: 8.5,
         bold: true,
         alignment: 'center',
         color: COLORS.text,
       },
 
       institutionSub: {
-        fontSize: 7,
+        fontSize: 7.5,
         bold: true,
         alignment: 'center',
         color: COLORS.primary,
@@ -128,7 +128,7 @@ export function reciboFormal(data: SalesReceiptData): TDocumentDefinitions {
       },
 
       saleCodeLabel: {
-        fontSize: 5.8,
+        fontSize: 6,
         bold: true,
         alignment: 'right',
         color: COLORS.muted,
@@ -149,18 +149,18 @@ export function reciboFormal(data: SalesReceiptData): TDocumentDefinitions {
       },
 
       mainValue: {
-        fontSize: 6.8,
+        fontSize: 7,
         color: COLORS.text,
       },
 
       sectionTitle: {
-        fontSize: 6.8,
+        fontSize: 7,
         bold: true,
         color: COLORS.primaryDark,
       },
 
       tableHeader: {
-        fontSize: 6.3,
+        fontSize: 7,
         bold: true,
         alignment: 'center',
         color: COLORS.white,
@@ -168,18 +168,18 @@ export function reciboFormal(data: SalesReceiptData): TDocumentDefinitions {
       },
 
       tableCell: {
-        fontSize: 6.25,
+        fontSize: 6.75,
         color: COLORS.text,
       },
 
       tableCellCenter: {
-        fontSize: 6.25,
+        fontSize: 6.75,
         alignment: 'center',
         color: COLORS.text,
       },
 
       tableCellRight: {
-        fontSize: 6.25,
+        fontSize: 6.75,
         alignment: 'right',
         color: COLORS.text,
       },
@@ -212,12 +212,12 @@ export function reciboFormal(data: SalesReceiptData): TDocumentDefinitions {
       },
 
       footerText: {
-        fontSize: 5.9,
+        fontSize: 7.5,
         color: COLORS.text,
       },
 
       metadata: {
-        fontSize: 4.8,
+        fontSize: 7,
         color: COLORS.muted,
       },
     },
@@ -325,7 +325,6 @@ function buildHeader(data: SalesReceiptData): Content {
               {
                 text: '"MUSERPOL"',
                 style: 'institutionSub',
-                margin: [0, 1, 0, 0],
               },
             ],
           },
