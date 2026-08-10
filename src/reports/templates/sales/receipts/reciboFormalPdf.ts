@@ -415,24 +415,25 @@ function buildMainInformation(data: SalesReceiptData): Content {
         ],
 
         [
-
-          mainLabelCell('DESDE LA ENTIDAD'),
-
-          {
-            text: paymentLocation(data),
-            style: 'mainValue',
-            alignment: 'left',
-            verticalAlignment: 'middle',
-          },
-
-          mainLabelCell('FORMA DE PAGO'),
+          mainLabelCell('TIPO DE PAGO'),
 
           {
             text: paymentType(data),
             style: 'mainValue',
+            // colSpan: 2,
+            colSpan: 3,
+            bold: true,
             verticalAlignment: 'middle',
           },
-          
+
+          {},
+          {},
+          // {
+          //   text: paymentLocation(data),
+          //   style: 'mainValue',
+          //   bold: true,
+          //   verticalAlignment: 'middle',
+          // },
         ],
       ],
     },
@@ -581,7 +582,7 @@ function productRow(product: SaleProducts, index: number, showFolderNumber: bool
   if (showFolderNumber) {
     row.push({
       text: isFolderProduct(product) ? folderNumbers(product) : '-',
-      style: 'tableCell',
+      style: 'tableCellCenter',
       fillColor,
     });
   }
