@@ -32,14 +32,14 @@ const COLORS = {
  * El espacio restante se utiliza para padding y bordes de PDFMake.
  */
 const SALES_TABLE_WIDTHS = [
-  48, // Código
+  55, // Código
   68, // Fecha y hora
   142, // Titular
-  124, // Servicio
+  120, // Servicio
   32, // Cantidad
   40, // Precio
   64, // Tipo de pago
-  48, // Total
+  45, // Total
   70, // Recepcionista
 ];
 
