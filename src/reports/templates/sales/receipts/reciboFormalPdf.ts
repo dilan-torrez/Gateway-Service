@@ -199,14 +199,14 @@ export function reciboFormal(data: SalesReceiptData): TDocumentDefinitions {
       },
 
       signature: {
-        fontSize: 6.5,
+        fontSize: 7.5,
         bold: true,
         alignment: 'center',
         color: COLORS.primaryDark,
       },
 
       signatureName: {
-        fontSize: 6.3,
+        fontSize: 7.3,
         alignment: 'center',
         color: COLORS.text,
       },
