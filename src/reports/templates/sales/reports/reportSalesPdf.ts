@@ -2,6 +2,7 @@ import { Content, TDocumentDefinitions } from "pdfmake/interfaces";
 import {
   SalesListData,
   SalesListItem,
+  SalesListProduct,
 } from "../../../interfaces/sales/sales-list-data.interface";
 import {
   buildSalesListHeaderData,
@@ -28,19 +29,19 @@ const COLORS = {
 };
 
 /**
- * Los anchos suman 630 puntos.
+ * Los anchos suman 636 puntos.
  * El espacio restante se utiliza para padding y bordes de PDFMake.
  */
 const SALES_TABLE_WIDTHS = [
   55, // Código
   68, // Fecha y hora
-  142, // Titular
-  120, // Servicio
+  130, // Titular
+  140, // Servicio
   32, // Cantidad
-  40, // Precio
-  64, // Tipo de pago
+  42, // Precio
+  62, // Tipo de pago
   45, // Total
-  70, // Recepcionista
+  62, // Recepcionista
 ];
 
 export function reportSales(data: SalesListData): TDocumentDefinitions {
@@ -289,6 +290,7 @@ function headerCell(text: string) {
 
 function rowCells(sale: SalesListItem, index: number) {
   const fillColor = index % 2 === 0 ? null : COLORS.alternateRow;
+  const products = getSaleProducts(sale);
 
   return [
     cell(sale.code, "center", true),
@@ -297,11 +299,11 @@ function rowCells(sale: SalesListItem, index: number) {
 
     cell(sale.principalCustomer, "left", true),
 
-    cell(sale.service, "left", true),
+    productCell(products, "name", "left", true),
 
-    cell(String(sale.amount), "center", true),
+    productCell(products, "amount", "center"),
 
-    cell(sale.price, "center", true),
+    productCell(products, "price", "center"),
 
     cell(sale.paymentType, "center", true),
 
@@ -314,6 +316,53 @@ function rowCells(sale: SalesListItem, index: number) {
   }));
 }
 
+function getSaleProducts(sale: SalesListItem): SalesListProduct[] {
+  if (sale.products?.length) {
+    return sale.products;
+  }
+
+  return [
+    {
+      name: sale.service,
+      amount: sale.amount,
+      price: sale.price,
+    },
+  ];
+}
+
+function productCell(
+  products: SalesListProduct[],
+  field: keyof SalesListProduct,
+  alignment: "left" | "center" | "right",
+  showBullet = false
+) {
+  return {
+    stack: products.map((product, index) => ({
+      text: showBullet
+        ? [
+            {
+              text: "• ",
+              bold: true,
+              color: COLORS.primaryDark,
+            },
+            {
+              text: fallback(String(product[field])),
+            },
+          ]
+        : fallback(String(product[field])),
+      style: "tableCell",
+      alignment,
+      margin: [
+        0,
+        index === 0 ? 0 : 1.5,
+        0,
+        index === products.length - 1 ? 0 : 1.5,
+      ],
+    })),
+    verticalAlignment: "middle",
+  };
+}
+
 function cell(
   text: string | null | undefined,
   alignment: "left" | "center" | "right" = "left",
@@ -323,6 +372,7 @@ function cell(
     text: fallback(text),
 
     style: "tableCell",
+    verticalAlignment: 'middle',
 
     alignment,
 

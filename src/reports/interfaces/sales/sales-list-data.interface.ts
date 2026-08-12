@@ -28,7 +28,14 @@ export interface SalesListItem {
   service: string;
   amount: number;
   price: string;
+  products?: SalesListProduct[];
   paymentType: string;
   total: string;
   receptionist: string;
+}
+
+export interface SalesListProduct {
+  name: string;
+  amount: number;
+  price: string;
 }

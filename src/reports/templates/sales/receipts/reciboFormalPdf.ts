@@ -457,14 +457,16 @@ function buildProductsBlock(data: SalesReceiptData): Content {
       text: 'POR CONCEPTO DE',
       style: 'tableHeader',
       alignment: 'left',
+      verticalAlignment: 'middle',
     },
   ];
 
   if (showFolderNumber) {
     headerRow.push({
-      text: 'NRO DE FOLDER',
+      text: 'NROS. DE FOLDER',
       style: 'tableHeader',
       alignment: 'center',
+      verticalAlignment: 'middle',
     });
   }
 
@@ -472,16 +474,19 @@ function buildProductsBlock(data: SalesReceiptData): Content {
     {
       text: 'CANT.',
       style: 'tableHeader',
+      verticalAlignment: 'middle',
     },
     {
       text: 'P. UNIT.',
       style: 'tableHeader',
       alignment: 'right',
+      verticalAlignment: 'middle',
     },
     {
       text: 'SUBTOTAL',
       style: 'tableHeader',
       alignment: 'right',
+      verticalAlignment: 'middle',
     },
   );
 
@@ -499,7 +504,7 @@ function buildProductsBlock(data: SalesReceiptData): Content {
         text: 'Sin servicios registrados.',
         style: 'tableCell',
         alignment: 'center',
-
+        verticalAlignment: 'middle',
         colSpan: columnCount,
         margin: [0, 3, 0, 3],
       },
@@ -518,7 +523,7 @@ function buildProductsBlock(data: SalesReceiptData): Content {
       {
         table: {
           headerRows: 1,
-          widths: showFolderNumber ? ['*', 76, 38, 58, 64] : ['*', 38, 58, 64],
+          widths: showFolderNumber ? ['*', 124, 34, 54, 60] : ['*', 38, 58, 64],
           body,
           dontBreakRows: true,
         },
@@ -574,34 +579,34 @@ function productRow(product: SaleProducts, index: number, showFolderNumber: bool
     {
       text: fallback(product.name),
       style: 'tableCell',
+      verticalAlignment: 'middle',
       fillColor,
     },
   ];
 
   if (showFolderNumber) {
-    row.push({
-      text: isFolderProduct(product) ? folderNumbers(product) : '-',
-      style: 'tableCellCenter',
-      fillColor,
-    });
+    row.push(folderNumbersCell(product, fillColor));
   }
 
   row.push(
     {
       text: fallback(product.amount),
       style: 'tableCellCenter',
+      verticalAlignment: 'middle',
       fillColor,
     },
 
     {
       text: money(product.price),
       style: 'tableCellRight',
+      verticalAlignment: 'middle',
       fillColor,
     },
 
     {
       text: money(product.total),
       style: 'tableCellRight',
+      verticalAlignment: 'middle',
       fillColor,
     },
   );
@@ -613,10 +618,71 @@ function isFolderProduct(product: SaleProducts): boolean {
   return product.groupName?.trim().toLowerCase() === 'folders';
 }
 
-function folderNumbers(product: SaleProducts): string {
-  const fileNumbers = Array.isArray(product.fileNumbers) ? product.fileNumbers.filter(Boolean) : [];
+function folderNumbersCell(product: SaleProducts, fillColor: string) {
+  const fileNumbers = Array.isArray(product.fileNumbers)
+    ? product.fileNumbers.filter(Boolean)
+    : [];
 
-  return fileNumbers.length > 0 ? fileNumbers.join(', ') : '-';
+  if (!isFolderProduct(product) || fileNumbers.length === 0) {
+    return {
+      text: '-',
+      style: 'tableCellCenter',
+      fillColor,
+      verticalAlignment: 'middle',
+    };
+  }
+
+  const rows: unknown[][] = [];
+
+  for (let index = 0; index < fileNumbers.length; index += 2) {
+    rows.push([
+      folderNumberBadge(fileNumbers[index]),
+      fileNumbers[index + 1]
+        ? folderNumberBadge(fileNumbers[index + 1])
+        : emptyFolderNumberBadge(),
+    ]);
+  }
+
+  return {
+    table: {
+      widths: ['*', '*'],
+      body: rows,
+    },
+    layout: folderNumbersLayout(),
+    fillColor,
+    verticalAlignment: 'middle',
+  };
+}
+
+function folderNumberBadge(fileNumber: string) {
+  return {
+    text: fileNumber,
+    fontSize: 5.6,
+    bold: true,
+    color: COLORS.primaryDark,
+    alignment: 'center',
+    noWrap: true,
+    fillColor: COLORS.primarySoft,
+    margin: [1, 1.1, 1, 1.1],
+  };
+}
+
+function emptyFolderNumberBadge() {
+  return {
+    text: '',
+    border: [false, false, false, false],
+  };
+}
+
+function folderNumbersLayout() {
+  return {
+    hLineWidth: () => 0,
+    vLineWidth: () => 0,
+    paddingLeft: () => 1.2,
+    paddingRight: () => 1.2,
+    paddingTop: () => 1.2,
+    paddingBottom: () => 1.2,
+  };
 }
 
 function buildSignatureBlock(data: SalesReceiptData): Content {
