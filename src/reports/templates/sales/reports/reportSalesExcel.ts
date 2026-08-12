@@ -22,17 +22,29 @@ export function reportSalesExcel(data: SalesListData): Workbook {
   worksheet.addRow(HEADERS);
 
   data.sales.forEach((sale) => {
-    worksheet.addRow([
+    const products = sale.products?.length
+      ? sale.products
+      : [{ name: sale.service, amount: sale.amount, price: sale.price }];
+    const row = worksheet.addRow([
       sale.code ?? '',
       sale.receptionDate ?? '',
       sale.principalCustomer ?? '',
-      sale.service ?? '',
-      sale.amount ?? '',
-      sale.price ?? '',
+      products.map((product) => `• ${product.name}`).join('\n'),
+      products.map((product) => product.amount).join('\n'),
+      products.map((product) => product.price).join('\n'),
       sale.paymentType ?? '',
       sale.total ?? '',
       sale.receptionist ?? '',
     ]);
+
+    row.height = Math.max(18, products.length * 15);
+    [4, 5, 6].forEach((column) => {
+      row.getCell(column).alignment = {
+        vertical: 'middle',
+        horizontal: column === 4 ? 'left' : 'center',
+        wrapText: true,
+      };
+    });
   });
 
   return workbook;
