@@ -62,14 +62,13 @@ export class ImportGatewayService {
     });
 
     // Obtener MAX(id) actual antes de importar para reportar rango correcto
-    let startId = 0;
     try {
       const maxIdResponse = await this.natsService.firstValue(
         `${config.microservice}.getMaxId`,
         { tableName: config.table, schema: config.schema },
       );
-      startId = (maxIdResponse?.maxId || 0) + 1;
-      this.logger.log(`MAX(id) actual en ${config.schema}.${config.table}: ${startId - 1}, importación empezará desde ${startId}`);
+      const currentMaxId = maxIdResponse?.maxId || 0;
+      this.logger.log(`MAX(id) actual en ${config.schema}.${config.table}: ${currentMaxId}, importación empezará desde ${currentMaxId + 1}`);
     } catch (error: any) {
       this.logger.warn(`No se pudo obtener MAX(id) para ${config.table}: ${error?.message || error}. Se usarán los IDs retornados por RETURNING id.`);
     }
