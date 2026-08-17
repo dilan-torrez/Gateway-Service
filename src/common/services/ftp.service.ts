@@ -321,10 +321,12 @@ export function ftpStorage(ftpService: FtpService, target: string) {
           hash.update(chunk);
           callback(null, chunk);
         },
-        error(err) {
-          tee.destroy();
-          cb(err);
-        },
+      });
+
+      // Manejar errores del hashCounter
+      hashCounter.on('error', (err) => {
+        tee.destroy();
+        cb(err);
       });
 
       // Conectar streams
