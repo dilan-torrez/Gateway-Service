@@ -90,7 +90,7 @@ export class CommonController {
     };
   }
 
-  @Post('collections/import/:name')
+  @Post('import/:name')
   @ApiOperation({ summary: 'Importar archivo CSV o Excel' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
