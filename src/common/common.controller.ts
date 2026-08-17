@@ -90,7 +90,7 @@ export class CommonController {
     };
   }
 
-  @Post('import/:name')
+  @Post('collections/import/:name')
   @ApiOperation({ summary: 'Importar archivo CSV o Excel' })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
@@ -133,21 +133,6 @@ export class CommonController {
     if (!file) throw new BadRequestException('Archivo requerido');
 
     return this.importGatewayService.processFile(file, name, userId);
-  }
-
-  @MessagePattern('ftp.saveDataTmp')
-  async saveDataTmp(data: { path: string; name: string; data: any; ttlMs?: number }) {
-    return await this.ftp.saveDataTmp(data.path, data.name, data.data, data.ttlMs);
-  }
-
-  @MessagePattern('ftp.getDataTmp')
-  async getDataTmp(data: { path: string; name: string }) {
-    return await this.ftp.getDataTmp(data.path, data.name);
-  }
-
-  @MessagePattern('ftp.removeDataTmp')
-  async removeDataTmp(data: { path: string; name: string }) {
-    return await this.ftp.removeDataTmp(data.path, data.name);
   }
 
   @MessagePattern('ftp.removeFile')
