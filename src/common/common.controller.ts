@@ -27,7 +27,7 @@ import {
   ImportGatewayService,
 } from 'src/common';
 import { AuthGuard } from 'src/auth/guards';
-import { ftpStorage } from './services/ftp-storage';
+import { ftpStorage } from './services/ftp.service';
 import { Request } from 'express';
 
 @ApiTags('common')
