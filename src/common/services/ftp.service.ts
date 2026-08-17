@@ -407,7 +407,6 @@ export class FtpService {
       return { statusRemoved: true, message: 'Data tmp removed successfully' };
     } catch (error) {
       this.logger.error('Failed to remove temp data:', error);
-      throw new Error('Failed to remove temp data', { cause: error });
     }
   }
 

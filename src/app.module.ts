@@ -11,6 +11,7 @@ import { AppMobileModule } from './app-mobile/app-mobile.module';
 import { RecordsModule } from './records/records.module';
 import { SalesModule } from './sales/sales.module';
 import { ReportsModule } from './reports/reports.module';
+import { CollectionsModule } from './collections/collections.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { ReportsModule } from './reports/reports.module';
     RecordsModule,
     SalesModule,
     ReportsModule,
+    CollectionsModule,
   ],
 })
 export class AppModule {}

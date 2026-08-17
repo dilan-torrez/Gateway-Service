@@ -370,7 +370,7 @@ export class ImportGatewayService {
     };
 
     try {
-      const response = await this.natsService.firstValue(targetPattern, payload, 30000);
+      const response = await this.natsService.firstValue(targetPattern, payload);
       return response;
     } catch (error) {
       // Retry once on transient errors (timeout, network issues, 503)
@@ -381,7 +381,7 @@ export class ImportGatewayService {
       if (isTransient && !isLastBatch) {
         this.logger.warn(`Retrying batch to ${targetPattern} after transient error: ${error.message}`);
         await this.delay(1000);
-        const response = await this.natsService.firstValue(targetPattern, payload, 30000);
+        const response = await this.natsService.firstValue(targetPattern, payload);
         return response;
       }
 
