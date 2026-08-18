@@ -279,6 +279,66 @@ export class FtpService {
     }
   }
 
+  async saveDataTmp(path: string, name: string, data: Record<string, any>, ttlMs = 120000) {
+    try {
+      const tempDir = '/tmp/' + path;
+      const filePath = servicePath.join(tempDir, name);
+
+      if (!fs.existsSync(tempDir)) {
+        fs.mkdirSync(tempDir, { recursive: true });
+      }
+
+      fs.writeFileSync(filePath, JSON.stringify(data), 'utf8');
+
+      this.logger.log(`Data saved to ${filePath} successfully`);
+      setTimeout(() => {
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+          this.logger.log(`Data removed from ${filePath} successfully`);
+        }
+      }, ttlMs);
+      return { statusSaved: true, message: 'Data saved successfully' };
+    } catch (error) {
+      this.logger.error('Failed to save data:', error);
+      this.wrapError('Failed to save data', error);
+    }
+  }
+
+  async getDataTmp(path: string, name: string) {
+    try {
+      const tempDir = '/tmp/' + path;
+      const filePath = servicePath.join(tempDir, name);
+
+      if (!fs.existsSync(filePath)) {
+        return null;
+      }
+
+      const raw = fs.readFileSync(filePath, 'utf8');
+
+      return JSON.parse(raw);
+    } catch {
+      return null;
+    }
+  }
+
+  async removeDataTmp(path: string, name: string) {
+    try {
+      const tempDir = '/tmp/' + path;
+      const filePath = servicePath.join(tempDir, name);
+
+      if (!fs.existsSync(filePath)) {
+        return { statusRemoved: true, message: 'Data tmp not found' };
+      }
+
+      fs.unlinkSync(filePath);
+      this.logger.log(`Data removed from ${filePath} successfully`);
+
+      return { statusRemoved: true, message: 'Data tmp removed successfully' };
+    } catch (error) {
+      this.logger.error('Failed to remove temp data:', error);
+    }
+  }
+
   async onDestroy() {
     await this.client.close();
     this.logger.log('FTP connection closed');
@@ -305,7 +365,6 @@ export function ftpStorage(ftpService: FtpService, target: string) {
 
       let fileSize = 0;
       const hash = createHash('sha256');
-      let uploaded = false;
 
       // Validar que el stream no esté consumido
       if (file.stream.destroyed) {
@@ -369,9 +428,7 @@ export function ftpStorage(ftpService: FtpService, target: string) {
 
       // Manejar errores del tee
       tee.on('error', (err) => {
-        if (!uploaded) {
-          cb(err);
-        }
+        cb(err);
       });
     },
 
