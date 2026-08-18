@@ -315,6 +315,7 @@ export function ftpStorage(ftpService: FtpService, target: string) {
 
       // Crear PassThrough para duplicar el stream
       const tee = new PassThrough();
+      const chunks: Buffer[] = [];
       const hashCounter = new Transform({
         transform(chunk: Buffer, _encoding: string, callback: (error?: any, data?: any) => void) {
           fileSize += chunk.length;
@@ -329,32 +330,18 @@ export function ftpStorage(ftpService: FtpService, target: string) {
         cb(err);
       });
 
-      // Conectar streams
-      file.stream.pipe(hashCounter);
-      file.stream.pipe(tee);
-
-      // Manejar errores del stream original
-      file.stream.on('error', (err) => {
-        hashCounter.destroy();
-        tee.destroy();
-        cb(err);
+      // Recopilar chunks del tee
+      tee.on('data', (chunk: Buffer) => {
+        chunks.push(chunk);
       });
 
-      // Subir a FTP cuando el tee tenga datos
-      tee.on('data', async (chunk) => {
-        if (uploaded) return;
-        uploaded = true;
-
+      // Cuando termine el stream, subir a FTP
+      tee.on('end', async () => {
         try {
-          // Crear un nuevo PassThrough para FTP
-          const ftpStream = new PassThrough();
-          ftpStream.end(chunk);
-
-          // Esperar a que termine el hash
-          hashCounter.resume();
-
-          // Subir a FTP
-          await ftpService.uploadStream(tee, ftpPath);
+          const fileBuffer = Buffer.concat(chunks);
+          const { Readable } = await import('stream');
+          const ftpStream = Readable.from(fileBuffer);
+          await ftpService.uploadStream(ftpStream, ftpPath);
           ftpStorageLogger.log(`FTP upload successful: ${ftpPath}`);
 
           const fileHash = hash.digest('hex');
@@ -370,6 +357,15 @@ export function ftpStorage(ftpService: FtpService, target: string) {
           cb(ftpErr);
         }
       });
+
+      // Manejar errores del tee
+      tee.on('error', (err) => {
+        cb(err);
+      });
+
+      // Conectar streams
+      file.stream.pipe(hashCounter);
+      file.stream.pipe(tee);
 
       // Manejar errores del tee
       tee.on('error', (err) => {
